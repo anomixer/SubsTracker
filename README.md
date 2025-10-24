@@ -1,164 +1,164 @@
-# SubsTracker - 订阅管理与提醒系统
+# SubsTracker - 訂閱管理與提醒系統
 
-基于Cloudflare Workers的轻量级订阅管理系统，帮助您轻松跟踪各类订阅服务的到期时间，并通过 Telegram、Webhook 等多渠道发送及时提醒。
+基於Cloudflare Workers的輕量級訂閱管理系統，幫助您輕鬆跟蹤各類訂閱服務的到期時間，並透過 Telegram、Webhook 等多渠道傳送及時提醒。
 
 ![image](https://github.com/user-attachments/assets/22ff1592-7836-4f73-aa13-24e9d43d7064)
 
 ## ✨ 功能特色
 
 ### 🎯 核心功能
-- **订阅管理**：添加、编辑、删除各类订阅服务
-- **智能提醒**：自定义提前提醒天数，自动续订计算
-- **农历显示**：支持农历日期显示，可控制开关
-- **状态管理**：订阅启用/停用，过期状态自动识别
+- **訂閱管理**：新增、編輯、刪除各類訂閱服務
+- **智慧提醒**：自定義提前提醒天數，自動續訂計算
+- **農曆顯示**：支援農曆日期顯示，可控制開關
+- **狀態管理**：訂閱啟用/停用，過期狀態自動識別
 
 ### 📱 多渠道通知
-- **Telegram**：支持 Telegram Bot 通知
-- **NotifyX**：集成 NotifyX 推送服务
-- **Webhook 通知**：支持自定义 Webhook 推送
-- **企业微信机器人**：支持企业微信群机器人通知
-- **邮件通知**：基于 Resend 的专业邮件服务
-- **Bark**：支持 iOS Bark 推送
-- **自定义 Webhook**：支持自定义请求格式和模板
+- **Telegram**：支援 Telegram Bot 通知
+- **NotifyX**：整合 NotifyX 推送服務
+- **Webhook 通知**：支援自定義 Webhook 推送
+- **企業微信機器人**：支援企業微信群機器人通知
+- **郵件通知**：基於 Resend 的專業郵件服務
+- **Bark**：支援 iOS Bark 推送
+- **自定義 Webhook**：支援自定義請求格式和模板
 
-### 🌙 农历功能
-- **农历转换**：支持 1900-2100 年农历转换
-- **智能显示**：列表和编辑页面可控制农历显示
-- **通知集成**：通知消息中可包含农历信息
+### 🌙 農曆功能
+- **農曆轉換**：支援 1900-2100 年農曆轉換
+- **智慧顯示**：列表和編輯頁面可控制農曆顯示
+- **通知整合**：通知訊息中可包含農曆資訊
 
-### 🎨 用户体验
-- **响应式设计**：完美适配桌面端和移动端
-- **备注优化**：长备注自动截断，悬停显示完整内容
-- **实时预览**：日期选择时实时显示对应农历
-- **用户偏好**：记住用户的显示偏好设置
+### 🎨 使用者體驗
+- **響應式設計**：完美適配桌面端和移動端
+- **備註最佳化**：長備註自動截斷，懸停顯示完整內容
+- **即時預覽**：日期選擇時即時顯示對應農曆
+- **使用者偏好**：記住使用者的顯示偏好設定
 
-## 🚀 一键部署
+## 🚀 一鍵部署
 
-### 点击按钮，一键部署到 CloudFlare Workers,
+### 點選按鈕，一鍵部署到 CloudFlare Workers,
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/wangwangit/SubsTracker)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/anomixer/SubsTracker)
 
 
-> 适用于新部署的,以前部署过的直接替换js中的内容即可!
+> 適用於新部署的,以前部署過的直接替換js中的內容即可!
 
-## 📋 三步开始使用
+## 📋 三步開始使用
 
-### 1️⃣ 一键部署
-Fork仓库,然后点击自己仓库里的部署按钮，等待部署完成,**注意,KV名称修改为 `SUBSCRIPTIONS_KV`**
+### 1️⃣ 一鍵部署
+Fork倉庫,然後點選自己倉庫裡的部署按鈕，等待部署完成,**注意,KV名稱修改為 `SUBSCRIPTIONS_KV`**
 ![image.png](https://img.wangwangit.com/file/1751942578108_image.png)
 
-### 2️⃣ 首次登录
-- 访问部署后的域名
-- 默认用户名：`admin`
-- 默认密码：`password`
+### 2️⃣ 首次登入
+- 訪問部署後的域名
+- 預設使用者名稱：`admin`
+- 預設密碼：`password`
 
-### 3️⃣ 开始使用
-1. **修改默认密码**（进入系统配置）
-2. **配置通知渠道**（选择一个或多个）
-3. **添加订阅**，设置提醒
-4. **享受智能提醒**！
+### 3️⃣ 開始使用
+1. **修改預設密碼**（進入系統配置）
+2. **配置通知渠道**（選擇一個或多個）
+3. **新增訂閱**，設定提醒
+4. **享受智慧提醒**！
 
 ## 🔧 通知渠道配置
 
 ### Telegram
-- **Bot Token**: 从 [@BotFather](https://t.me/BotFather) 获取
-- **Chat ID**: 从 [@userinfobot](https://t.me/userinfobot) 获取
+- **Bot Token**: 從 [@BotFather](https://t.me/BotFather) 獲取
+- **Chat ID**: 從 [@userinfobot](https://t.me/userinfobot) 獲取
 
 ### NotifyX
-- **API Key**: 从 [NotifyX官网](https://www.notifyx.cn/) 获取
+- **API Key**: 從 [NotifyX官網](https://www.notifyx.cn/) 獲取
 
-### 企业微信机器人
-- **推送 URL**: 参考[官方文档](https://developer.work.weixin.qq.com/document/path/91770)获取
+### 企業微信機器人
+- **推送 URL**: 參考[官方文件](https://developer.work.weixin.qq.com/document/path/91770)獲取
 
 ### Webhook 通知
-- **推送 URL**: 根据所使用的 Webhook 服务或自建接口填写，例如 `https://your-service.com/hooks/notify`
-- 支持自定义请求方法、请求头与消息模板
-- **模板占位符**：`{{title}}`、`{{content}}`、`{{tags}}`（多行形式）、`{{tagsLine}}`、`{{timestamp}}`、`{{formattedMessage}}`
+- **推送 URL**: 根據所使用的 Webhook 服務或自建介面填寫，例如 `https://your-service.com/hooks/notify`
+- 支援自定義請求方法、請求頭與訊息模板
+- **模板佔位符**：`{{title}}`、`{{content}}`、`{{tags}}`（多行形式）、`{{tagsLine}}`、`{{timestamp}}`、`{{formattedMessage}}`
 
 ### Bark（iOS 推送）
-- **服务器地址**：默认 `https://api.day.app`，也可使用自建服务器
-- **设备 Key**：在 Bark App 内复制
-- **历史记录**：勾选“保存推送”后可保留推送历史
+- **伺服器地址**：預設 `https://api.day.app`，也可使用自建伺服器
+- **裝置 Key**：在 Bark App 內複製
+- **歷史記錄**：勾選“儲存推送”後可保留推送歷史
 
-### 邮件通知 (Resend)
-- **API Key**: 从 [Resend 官方教程](https://developers.cloudflare.com/workers/tutorials/send-emails-with-resend/) 获取
-- **发件人邮箱**: 必须是已在 Resend 验证的域名邮箱
-- **收件人邮箱**: 接收通知的邮箱地址
-- 支持 HTML 格式的美观邮件模板
+### 郵件通知 (Resend)
+- **API Key**: 從 [Resend 官方教程](https://developers.cloudflare.com/workers/tutorials/send-emails-with-resend/) 獲取
+- **發件人郵箱**: 必須是已在 Resend 驗證的域名郵箱
+- **收件人郵箱**: 接收通知的郵箱地址
+- 支援 HTML 格式的美觀郵件模板
 
-### 🔔 通知时间与时区说明
-- Cloudflare Workers 的 Cron 表达式使用 **UTC 时区**，例如 `0 8 * * *` 表示 UTC 08:00 触发
-- 若希望在北京时间（UTC+8）早上 8 点提醒，可将 Cron 设置为 `0 0 * * *`
-- 若需要小时级提醒，可将 Cron 调整为 `0 * * * *`（每小时执行一次），并在系统配置中指定允许的通知小时
-- 系统配置中的 “系统时区” 用于计算订阅剩余时间和格式化展示，建议与提醒需求保持一致
+### 🔔 通知時間與時區說明
+- Cloudflare Workers 的 Cron 表示式使用 **UTC 時區**，例如 `0 8 * * *` 表示 UTC 08:00 觸發
+- 若希望在北京時間（UTC+8）早上 8 點提醒，可將 Cron 設定為 `0 0 * * *`
+- 若需要小時級提醒，可將 Cron 調整為 `0 * * * *`（每小時執行一次），並在系統配置中指定允許的通知小時
+- 系統配置中的 “系統時區” 用於計算訂閱剩餘時間和格式化展示，建議與提醒需求保持一致
 
-### 🔐 第三方 API 安全调用
-- 通过 `POST /api/notify/{token}` 可触发系统通知，请在后台配置“第三方 API 访问令牌”
-- 令牌也可通过 `Authorization: Bearer <token>` 或 `?token=<token>` 传入
-- 未配置或令牌不匹配时接口会直接拒绝请求，建议定期更换随机令牌
-
-
-> 💡 **提示**: 系统默认每天早上8点自动检查即将到期的订阅
+### 🔐 第三方 API 安全呼叫
+- 透過 `POST /api/notify/{token}` 可觸發系統通知，請在後臺配置“第三方 API 訪問令牌”
+- 令牌也可透過 `Authorization: Bearer <token>` 或 `?token=<token>` 傳入
+- 未配置或令牌不匹配時介面會直接拒絕請求，建議定期更換隨機令牌
 
 
-**欢迎大家关注我的公众号**
+> 💡 **提示**: 系統預設每天早上8點自動檢查即將到期的訂閱
+
+
+**歡迎大家關注我的公眾號**
 
 ![39d8d5a902fa1eee6cbbbc8a0dcff4b](https://github.com/user-attachments/assets/96bae085-4299-4377-9958-9a3a11294efc)
 
 
 
-## 🚀 手动部署指南
+## 🚀 手動部署指南
 
-### 前提条件
+### 前提條件
 
-- Cloudflare账户
-- Telegram Bot (用于发送通知)
-- 可以直接将代码丢给AI,帮助查漏补缺
+- Cloudflare賬戶
+- Telegram Bot (用於傳送通知)
+- 可以直接將程式碼丟給AI,幫助查漏補缺
 
-### 部署步骤
+### 部署步驟
 
-1.登陆cloudflare,创建worker,粘贴本项目中的js代码,点击部署
+1.登陸cloudflare,建立worker,貼上本專案中的js程式碼,點選部署
 
 ![image](https://github.com/user-attachments/assets/ff4ac794-01e1-4916-b226-1f4f604dcbd3)
 
 
-2.创建KV键值 **SUBSCRIPTIONS_KV**
+2.建立KV鍵值 **SUBSCRIPTIONS_KV**
 
 ![image](https://github.com/user-attachments/assets/c9ebaf3e-6015-4400-bb0a-1a55fd5e14d2)
 
 
-3.给worker绑定上键值对,以及设置定时执行时间!
+3.給worker繫結上鍵值對,以及設定定時執行時間!
 
 ![image](https://github.com/user-attachments/assets/25b663b3-8e8e-4386-a499-9b6bf12ead76)
 
 
-4.打开worker提供的域名地址,输入默认账号密码: admin  password (或者admin admin123),可以在代码中查看默认账号密码!
+4.開啟worker提供的域名地址,輸入預設賬號密碼: admin  password (或者admin admin123),可以在程式碼中檢視預設賬號密碼!
 
 ![image](https://github.com/user-attachments/assets/5dac1ce0-43a3-4642-925c-d9cf21076454)
 
 
-5.前往系统配置,修改账号密码,以及配置tg通知的信息
+5.前往系統配置,修改賬號密碼,以及配置tg通知的資訊
 
 ![image](https://github.com/user-attachments/assets/f6db2089-28a1-439d-9de0-412ee4b2807f)
 
 
-6.配置完成可以点击测试通知,查看是否能够正常通知,然后就可以正常添加订阅使用了!
+6.配置完成可以點選測試通知,檢視是否能夠正常通知,然後就可以正常新增訂閱使用了!
 
 ![image](https://github.com/user-attachments/assets/af530379-332c-4482-9e6e-229a9e24775e)
 
 
-## 赞助
-本项目 CDN 加速及安全防护由 Tencent EdgeOne 赞助：EdgeOne 提供长期有效的免费套餐，包含不限量的流量和请求，覆盖中国大陆节点，且无任何超额收费，感兴趣的朋友可以点击下面的链接领取
+## 贊助
+本專案 CDN 加速及安全防護由 Tencent EdgeOne 贊助：EdgeOne 提供長期有效的免費套餐，包含不限量的流量和請求，覆蓋中國大陸節點，且無任何超額收費，感興趣的朋友可以點選下面的連結領取
 
 [[Best Asian CDN, Edge, and Secure Solutions - Tencent EdgeOne](https://edgeone.ai/?from=github)]
 
 [![image](https://edgeone.ai/media/34fe3a45-492d-4ea4-ae5d-ea1087ca7b4b.png)](https://edgeone.ai/media/34fe3a45-492d-4ea4-ae5d-ea1087ca7b4b.png)
 
-## 🤝 贡献
+## 🤝 貢獻
 
-欢迎贡献代码、报告问题或提出新功能建议!
+歡迎貢獻程式碼、報告問題或提出新功能建議!
 
-## 📜 许可证
+## 📜 許可證
 
 MIT License
 
