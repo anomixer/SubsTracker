@@ -434,11 +434,13 @@ const loginPage = `
     .login-container {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
+      transition: background 0.3s ease;
     }
     .login-box {
       backdrop-filter: blur(8px);
       background-color: rgba(255, 255, 255, 0.9);
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
     }
     .btn-primary {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -456,9 +458,66 @@ const loginPage = `
       border-color: #667eea;
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
     }
+    
+    /* 主題切換按鈕 */
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    .theme-toggle:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: rotate(180deg);
+    }
+    
+    /* 暗色主題 */
+    .dark-theme .login-container {
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    }
+    .dark-theme .login-box {
+      background-color: rgba(31, 41, 55, 0.95);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+    .dark-theme .login-box h1 {
+      color: #f9fafb !important;
+    }
+    .dark-theme .login-box p {
+      color: #d1d5db !important;
+    }
+    .dark-theme .input-field {
+      background-color: #374151;
+      border-color: #4b5563;
+      color: #f9fafb;
+    }
+    .dark-theme .input-field:focus {
+      border-color: #818cf8;
+      background-color: #4b5563;
+    }
+    .dark-theme label {
+      color: #d1d5db !important;
+    }
+    .dark-theme #errorMsg {
+      color: #fca5a5 !important;
+    }
   </style>
 </head>
 <body class="login-container flex items-center justify-center">
+  <button class="theme-toggle" id="themeToggle" title="切換主題">
+    <i class="fas fa-sun" id="themeIcon"></i>
+  </button>
   <div class="login-box p-8 rounded-xl w-full max-w-md">
     <div class="text-center mb-8">
       <h1 class="text-2xl font-bold text-gray-800"><i class="fas fa-calendar-check mr-2"></i>訂閱管理系統</h1>
@@ -492,6 +551,37 @@ const loginPage = `
   </div>
   
   <script>
+    // 主題切換功能
+    (function() {
+      const themeToggle = document.getElementById('themeToggle');
+      const themeIcon = document.getElementById('themeIcon');
+      const body = document.body;
+      
+      // 從 localStorage 讀取主題設定
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      if (savedTheme === 'dark') {
+        body.classList.add('dark-theme');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+      }
+      
+      // 主題切換事件
+      themeToggle.addEventListener('click', () => {
+        body.classList.toggle('dark-theme');
+        const isDark = body.classList.contains('dark-theme');
+        
+        if (isDark) {
+          themeIcon.classList.remove('fa-sun');
+          themeIcon.classList.add('fa-moon');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          themeIcon.classList.remove('fa-moon');
+          themeIcon.classList.add('fa-sun');
+          localStorage.setItem('theme', 'light');
+        }
+      });
+    })();
+    
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('username').value;
@@ -841,6 +931,94 @@ const adminPage = `
     .toast.error { background-color: #ef4444; }
     .toast.info { background-color: #3b82f6; }
     .toast.warning { background-color: #f59e0b; }
+    
+    /* 主題切換按鈕 */
+    .theme-toggle {
+      background: white;
+      border: 1px solid #e5e7eb;
+      color: #6b7280;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .theme-toggle:hover {
+      background: #f3f4f6;
+      color: #4b5563;
+      transform: rotate(180deg);
+    }
+    
+    /* 暗色主題 */
+    .dark-theme { background-color: #111827; }
+    .dark-theme nav { background-color: #1f2937; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); }
+    .dark-theme nav .font-bold { color: #f9fafb !important; }
+    .dark-theme nav a { color: #d1d5db !important; }
+    .dark-theme nav a:hover { color: #f9fafb !important; }
+    .dark-theme nav .text-indigo-600 { color: #818cf8 !important; }
+    .dark-theme nav .border-indigo-600 { border-color: #818cf8 !important; }
+    .dark-theme .bg-gray-100 { background-color: #111827 !important; }
+    .dark-theme h2, .dark-theme h3, .dark-theme h4 { color: #f9fafb !important; }
+    .dark-theme .text-gray-500, .dark-theme p { color: #9ca3af !important; }
+    .dark-theme .text-gray-700 { color: #d1d5db !important; }
+    .dark-theme .text-gray-800 { color: #f9fafb !important; }
+    .dark-theme .bg-white { background-color: #1f2937 !important; }
+    .dark-theme .table-container { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); }
+    .dark-theme .bg-gray-50 { background-color: #374151 !important; }
+    .dark-theme .text-gray-900 { color: #f9fafb !important; }
+    .dark-theme .divide-gray-200 > * { border-color: #374151 !important; }
+    .dark-theme .border-gray-200 { border-color: #374151 !important; }
+    .dark-theme .border-gray-300 { border-color: #4b5563 !important; }
+    .dark-theme input, .dark-theme select, .dark-theme textarea {
+      background-color: #374151 !important;
+      border-color: #4b5563 !important;
+      color: #f9fafb !important;
+    }
+    .dark-theme input:focus, .dark-theme select:focus, .dark-theme textarea:focus {
+      border-color: #818cf8 !important;
+      background-color: #4b5563 !important;
+    }
+    .dark-theme .modal-container { background-color: rgba(0, 0, 0, 0.75); }
+    .dark-theme label { color: #d1d5db !important; }
+    .dark-theme .theme-toggle { background: #374151; border-color: #4b5563; color: #9ca3af; }
+    .dark-theme .theme-toggle:hover { background: #4b5563; color: #d1d5db; }
+    .dark-theme .readonly-input { background-color: #374151 !important; border-color: #4b5563 !important; }
+    .dark-theme .custom-date-picker { background-color: #1f2937 !important; border-color: #374151 !important; }
+    .dark-theme .calendar-day { color: #d1d5db; }
+    .dark-theme .calendar-day:hover { background-color: #374151 !important; }
+    .dark-theme .calendar-day.other-month { color: #6b7280; }
+    
+    /* 表格 hover 樣式 */
+    tbody tr {
+      transition: background-color 0.15s ease;
+    }
+    tbody tr:hover {
+      background-color: #e0e7ff !important;
+    }
+    .dark-theme tbody tr:hover {
+      background-color: #374151 !important;
+    }
+    .dark-theme tbody tr:hover td {
+      color: #f9fafb !important;
+    }
+    .dark-theme tbody tr:hover .text-gray-500 {
+      color: #d1d5db !important;
+    }
+    .dark-theme tbody tr:hover .text-gray-700 {
+      color: #e5e7eb !important;
+    }
+    .dark-theme tbody tr:hover .text-indigo-600 {
+      color: #a5b4fc !important;
+    }
+    .dark-theme .text-gray-600 {
+      color: #d1d5db !important;
+    }
+    .dark-theme .text-purple-600 {
+      color: #c084fc !important;
+    }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -855,6 +1033,9 @@ const adminPage = `
           <span id="systemTimeDisplay" class="ml-4 text-base text-indigo-600 font-normal"></span>
         </div>
         <div class="flex items-center space-x-4">
+          <button class="theme-toggle" id="themeToggle" title="切換主題">
+            <i class="fas fa-sun" id="themeIcon"></i>
+          </button>
           <a href="/admin" class="text-indigo-600 border-b-2 border-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
             <i class="fas fa-list mr-1"></i>訂閱列表
           </a>
@@ -1859,7 +2040,7 @@ const lunarBiz = {
 
         const calendarTypeHtml = subscription.useLunar
           ? '<div class="text-xs text-purple-600 mt-1">日曆型別：農曆</div>'
-          : '<div class="text-xs text-gray-600 mt-1">日曆型別：公曆</div>';
+          : '<div class="text-xs text-gray-700 mt-1">日曆型別：公曆</div>';
 
         const expiryDate = new Date(subscription.expiryDate);
         const currentDtf = new Intl.DateTimeFormat('en-US', {
@@ -1987,7 +2168,7 @@ const lunarBiz = {
         const reminderExtra = reminder.value === 0
           ? '<div class="text-xs text-gray-500 mt-1">僅到期時提醒</div>'
           : (reminder.unit === 'hour' ? '<div class="text-xs text-gray-500 mt-1">小時級提醒</div>' : '');
-        const reminderHtml = '<div><i class="fas fa-bell mr-1"></i>' + reminder.displayText + '</div>' + reminderExtra;
+        const reminderHtml = '<div class="text-sm text-gray-900"><i class="fas fa-bell mr-1"></i>' + reminder.displayText + '</div>' + reminderExtra;
 
         row.innerHTML =
           '<td data-label="名稱" class="px-4 py-3"><div class="td-content-wrapper">' +
@@ -3105,6 +3286,37 @@ const lunarBiz = {
       }
     }
     showSystemTime();
+    
+    // 主題切換功能
+    (function() {
+      const themeToggle = document.getElementById('themeToggle');
+      const themeIcon = document.getElementById('themeIcon');
+      const body = document.body;
+      
+      // 從 localStorage 讀取主題設定
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      if (savedTheme === 'dark') {
+        body.classList.add('dark-theme');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+      }
+      
+      // 主題切換事件
+      themeToggle.addEventListener('click', () => {
+        body.classList.toggle('dark-theme');
+        const isDark = body.classList.contains('dark-theme');
+        
+        if (isDark) {
+          themeIcon.classList.remove('fa-sun');
+          themeIcon.classList.add('fa-moon');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          themeIcon.classList.remove('fa-moon');
+          themeIcon.classList.add('fa-sun');
+          localStorage.setItem('theme', 'light');
+        }
+      });
+    })();
   </script>
 </body>
 </html>
@@ -3150,6 +3362,63 @@ const configPage = `
       background-color: #f9fafb; 
       opacity: 0.7; 
     }
+    
+    /* 主題切換按鈕 */
+    .theme-toggle {
+      background: white;
+      border: 1px solid #e5e7eb;
+      color: #6b7280;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .theme-toggle:hover {
+      background: #f3f4f6;
+      color: #4b5563;
+      transform: rotate(180deg);
+    }
+    
+    /* 暗色主題 */
+    .dark-theme { background-color: #111827; }
+    .dark-theme nav { background-color: #1f2937; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); }
+    .dark-theme nav .font-bold { color: #f9fafb !important; }
+    .dark-theme nav a { color: #d1d5db !important; }
+    .dark-theme nav a:hover { color: #f9fafb !important; }
+    .dark-theme nav .text-indigo-600 { color: #818cf8 !important; }
+    .dark-theme nav .border-indigo-600 { border-color: #818cf8 !important; }
+    .dark-theme .bg-gray-100 { background-color: #111827 !important; }
+    .dark-theme h2, .dark-theme h3, .dark-theme h4 { color: #f9fafb !important; }
+    .dark-theme .text-gray-500, .dark-theme p { color: #9ca3af !important; }
+    .dark-theme .text-gray-700 { color: #d1d5db !important; }
+    .dark-theme .text-gray-800 { color: #f9fafb !important; }
+    .dark-theme .text-gray-900 { color: #f9fafb !important; }
+    .dark-theme .bg-white { background-color: #1f2937 !important; }
+    .dark-theme .border-gray-200 { border-color: #374151 !important; }
+    .dark-theme .border-gray-300 { border-color: #4b5563 !important; }
+    .dark-theme input, .dark-theme select, .dark-theme textarea {
+      background-color: #374151 !important;
+      border-color: #4b5563 !important;
+      color: #f9fafb !important;
+    }
+    .dark-theme input:focus, .dark-theme select:focus, .dark-theme textarea:focus {
+      border-color: #818cf8 !important;
+      background-color: #4b5563 !important;
+    }
+    .dark-theme label { color: #d1d5db !important; }
+    .dark-theme .theme-toggle { background: #374151; border-color: #4b5563; color: #9ca3af; }
+    .dark-theme .theme-toggle:hover { background: #4b5563; color: #d1d5db; }
+    .dark-theme .config-section { border-color: #4b5563; }
+    .dark-theme .config-section.active { background-color: #1f2937; border-color: #818cf8; }
+    .dark-theme .config-section.inactive { background-color: #1f2937; opacity: 0.6; }
+    .dark-theme code { background-color: #374151; color: #818cf8; padding: 2px 4px; border-radius: 3px; }
+    .dark-theme .bg-indigo-50 { background-color: #1f2937 !important; }
+    .dark-theme .border-indigo-100 { border-color: #4b5563 !important; }
+    .dark-theme .text-indigo-700 { color: #a5b4fc !important; }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -3164,6 +3433,9 @@ const configPage = `
           <span id="systemTimeDisplay" class="ml-4 text-base text-indigo-600 font-normal"></span>
         </div>
         <div class="flex items-center space-x-4">
+          <button class="theme-toggle" id="themeToggle" title="切換主題">
+            <i class="fas fa-sun" id="themeIcon"></i>
+          </button>
           <a href="/admin" class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
             <i class="fas fa-list mr-1"></i>訂閱列表
           </a>
@@ -3995,6 +4267,37 @@ const configPage = `
       }
     }
     showSystemTime();
+    
+    // 主題切換功能
+    (function() {
+      const themeToggle = document.getElementById('themeToggle');
+      const themeIcon = document.getElementById('themeIcon');
+      const body = document.body;
+      
+      // 從 localStorage 讀取主題設定
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      if (savedTheme === 'dark') {
+        body.classList.add('dark-theme');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+      }
+      
+      // 主題切換事件
+      themeToggle.addEventListener('click', () => {
+        body.classList.toggle('dark-theme');
+        const isDark = body.classList.contains('dark-theme');
+        
+        if (isDark) {
+          themeIcon.classList.remove('fa-sun');
+          themeIcon.classList.add('fa-moon');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          themeIcon.classList.remove('fa-moon');
+          themeIcon.classList.add('fa-sun');
+          localStorage.setItem('theme', 'light');
+        }
+      });
+    })();
   </script>
 </body>
 </html>
