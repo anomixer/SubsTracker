@@ -1,0 +1,1218 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系統配置 - 訂閱管理系統</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  ${themeResources} <style>
+    
+    .toast {
+      position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 8px;
+      color: white; font-weight: 500; z-index: 1000; transform: translateX(400px);
+      transition: all 0.3s ease-in-out; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .toast.show { transform: translateX(0); }
+    .toast.success { background-color: #10b981; }
+    .toast.error { background-color: #ef4444; }
+    .toast.info { background-color: #3b82f6; }
+    .toast.warning { background-color: #f59e0b; }
+    html.dark .toast {
+      color: #f9fafb;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+    }
+    html.dark .toast.success { background-color: #059669; }
+    html.dark .toast.error { background-color: #dc2626; }
+    html.dark .toast.info { background-color: #2563eb; }
+    html.dark .toast.warning { background-color: #d97706; }
+    
+    .config-section { 
+      border: 1px solid #e5e7eb; 
+      border-radius: 8px; 
+      padding: 16px; 
+      margin-bottom: 24px; 
+    }
+    .config-section.active { 
+      background-color: #f8fafc; 
+      border-color: #6366f1; 
+    }
+    .config-section.inactive { 
+      background-color: #f9fafb; 
+      opacity: 0.7; 
+    }
+    /* === Config Page 暗黑模式修復 === */
+    html.dark .config-section {
+      border-color: #374151;
+    }
+    html.dark .config-section.active {
+      background-color: rgba(31, 41, 55, 0.5); /* #1f2937 with opacity */
+      border-color: #818cf8;
+    }
+    html.dark .config-section.inactive {
+      background-color: #111827;
+      opacity: 0.5;
+    }
+    html.dark .bg-indigo-50 {
+        background-color: rgba(55, 65, 81, 0.5) !important; /* 深灰色帶透明 */
+        border-color: #4b5563 !important;
+    }
+    html.dark .text-indigo-700 {
+        color: #a5b4fc !important; /* 淺靛藍 */
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div id="toast-container"></div>
+
+  <nav class="bg-white shadow-md relative z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center shrink-0">
+          <div class="flex items-center">
+            <i class="fas fa-calendar-check text-indigo-600 text-2xl mr-2"></i>
+            <span class="font-bold text-xl text-gray-800">訂閱管理系統</span>
+          </div>
+          <span id="systemTimeDisplay" class="ml-4 text-base text-indigo-600 font-normal hidden md:block pt-1"></span>
+        </div>
+          
+        <div class="hidden md:flex items-center space-x-4 ml-auto">
+          <a href="/admin/dashboard" class="text-gray-700 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300 px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fas fa-chart-line mr-1"></i>儀表盤
+          </a>
+          <a href="/admin" class="text-gray-700 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300 px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fas fa-list mr-1"></i>訂閱列表
+          </a>
+          <a href="/admin/config" class="text-indigo-600 border-b-2 border-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fas fa-cog mr-1"></i>系統配置
+          </a>
+          <a href="/api/logout" class="text-gray-700 hover:text-red-600 border-b-2 border-transparent hover:border-red-300 px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fas fa-sign-out-alt mr-1"></i>退出登入
+          </a>
+        </div>
+
+        <div class="flex items-center md:hidden ml-auto">
+          <button id="mobile-menu-btn" type="button" aria-expanded="false" aria-label="切換導航選單" class="text-gray-600 hover:text-indigo-600 focus:outline-none p-2 rounded-md hover:bg-gray-100 active:bg-gray-200 transition-colors">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-b border-gray-200 w-full">
+      <div class="px-4 pt-2 pb-4 space-y-2">
+        <div id="mobileTimeDisplay" class="px-3 py-2 text-xs text-indigo-600 text-right border-b border-gray-100 mb-2"></div>
+        <a href="/admin/dashboard" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 active:bg-indigo-100 transition-colors">
+          <i class="fas fa-chart-line w-6 text-center mr-2"></i>儀表盤
+        </a>
+        <a href="/admin" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 active:bg-indigo-100 transition-colors">
+          <i class="fas fa-list w-6 text-center mr-2"></i>訂閱列表
+        </a>
+        <a href="/admin/config" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 active:bg-indigo-100 transition-colors">
+          <i class="fas fa-cog w-6 text-center mr-2"></i>系統配置
+        </a>
+        <a href="/api/logout" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 active:bg-red-100 transition-colors">
+          <i class="fas fa-sign-out-alt w-6 text-center mr-2"></i>退出登入
+        </a>
+      </div>
+    </div>
+  </nav>
+  
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">系統配置</h2>
+      
+      <form id="configForm" class="space-y-8">
+        <div class="border-b border-gray-200 pb-6">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">管理員賬戶</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label for="adminUsername" class="block text-sm font-medium text-gray-700">使用者名稱</label>
+              <input type="text" id="adminUsername" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div>
+              <label for="adminPassword" class="block text-sm font-medium text-gray-700">密碼</label>
+              <input type="password" id="adminPassword" placeholder="如不修改密碼，請留空" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              <p class="mt-1 text-sm text-gray-500">留空表示不修改當前密碼</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="border-b border-gray-200 pb-6">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">顯示設定</h3>
+          
+          <div class="mb-6">
+            <label for="themeModeSelect" class="block text-sm font-medium text-gray-700 mb-1">主題模式</label>
+            <select id="themeModeSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white sm:text-sm">
+              <option value="light">🌞 淺色模式</option>
+              <option value="dark">🌙 暗黑模式</option>
+              <option value="system">🖥️ 跟隨系統</option>
+            </select>
+            <p class="mt-1 text-sm text-gray-500">選擇系統的外觀風格</p>
+          </div>
+          
+          <div class="mb-6">
+            <label class="inline-flex items-center">
+              <input type="checkbox" id="showLunarGlobal" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked>
+              <span class="ml-2 text-sm text-gray-700">在通知中顯示農曆日期</span>
+            </label>
+            <p class="mt-1 text-sm text-gray-500">控制是否在通知訊息中包含農曆日期資訊</p>
+          </div>
+        </div>
+
+
+        <div class="border-b border-gray-200 pb-6">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">時區設定</h3>
+          <div class="mb-6">
+          <label for="timezone" class="block text-sm font-medium text-gray-700 mb-1">時區選擇</label>
+          <select id="timezone" name="timezone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+            <option value="UTC">世界標準時間（UTC+0）</option>
+            <option value="Asia/Shanghai">中國標準時間（UTC+8）</option>
+            <option value="Asia/Hong_Kong">香港時間（UTC+8）</option>
+            <option value="Asia/Taipei">臺北時間（UTC+8）</option>
+            <option value="Asia/Singapore">新加坡時間（UTC+8）</option>
+            <option value="Asia/Tokyo">日本時間（UTC+9）</option>
+            <option value="Asia/Seoul">韓國時間（UTC+9）</option>
+            <option value="America/New_York">美國東部時間（UTC-5）</option>
+            <option value="America/Chicago">美國中部時間（UTC-6）</option>
+            <option value="America/Denver">美國山地時間（UTC-7）</option>
+            <option value="America/Los_Angeles">美國太平洋時間（UTC-8）</option>
+            <option value="Europe/London">英國時間（UTC+0）</option>
+            <option value="Europe/Paris">巴黎時間（UTC+1）</option>
+            <option value="Europe/Berlin">柏林時間（UTC+1）</option>
+            <option value="Europe/Moscow">莫斯科時間（UTC+3）</option>
+            <option value="Australia/Sydney">悉尼時間（UTC+10）</option>
+            <option value="Australia/Melbourne">墨爾本時間（UTC+10）</option>
+            <option value="Pacific/Auckland">奧克蘭時間（UTC+12）</option>
+          </select>
+            <p class="mt-1 text-sm text-gray-500">該項僅用於相容舊配置與展示參考；後端排程與提醒計算統一使用 UTC，頁面時間始終按當前裝置時區顯示。</p>
+          </div>
+        </div>
+
+        
+        <div class="border-b border-gray-200 pb-6">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">通知設定</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label for="notificationHours" class="block text-sm font-medium text-gray-700">通知時段（UTC）</label>
+              <input type="text" id="notificationHours" placeholder="例如：08, 12, 20 或輸入 * 表示全天"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              <p class="mt-1 text-sm text-gray-500">可輸入多個小時，使用逗號或空格分隔；留空則預設每天執行一次任務即可</p>
+            </div>
+            <div class="bg-indigo-50 border border-indigo-100 rounded-md p-3 text-sm text-indigo-700">
+              <p class="font-medium mb-1">提示</p>
+              <p>後臺統一按 UTC 判斷通知時段。示例：北京時間 08:00 對應 UTC 00，請在此填 <code>00</code>。</p>
+              <p class="mt-1">若 Cron 已設定為每小時執行，可用該欄位限制實際傳送提醒的小時段。</p>
+            </div>
+          </div>
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-3">通知方式（可多選）</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="enabledNotifiers" value="telegram" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                <span class="ml-2 text-sm text-gray-700">Telegram</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="enabledNotifiers" value="notifyx" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked>
+                <span class="ml-2 text-sm text-gray-700 font-semibold">NotifyX</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="enabledNotifiers" value="webhook" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                <span class="ml-2 text-sm text-gray-700">Webhook 通知</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="enabledNotifiers" value="wechatbot" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                <span class="ml-2 text-sm text-gray-700">企業微信機器人</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="enabledNotifiers" value="email" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                <span class="ml-2 text-sm text-gray-700">郵件通知</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="enabledNotifiers" value="bark" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                <span class="ml-2 text-sm text-gray-700">Bark</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="enabledNotifiers" value="gotify" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                <span class="ml-2 text-sm text-gray-700">Gotify</span>
+              </label>
+            </div>
+            <div class="mt-2 flex flex-wrap gap-4">
+              <a href="https://www.notifyx.cn/" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">
+                <i class="fas fa-external-link-alt ml-1"></i> NotifyX官網
+              </a>
+              <a href="https://webhook.site" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">
+                <i class="fas fa-external-link-alt ml-1"></i> Webhook 除錯工具
+              </a>
+              <a href="https://developer.work.weixin.qq.com/document/path/91770" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">
+                <i class="fas fa-external-link-alt ml-1"></i> 企業微信機器人文件
+              </a>
+              <a href="https://developers.cloudflare.com/workers/tutorials/send-emails-with-resend/" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">
+                <i class="fas fa-external-link-alt ml-1"></i> 獲取 Resend API Key
+              </a>
+              <a href="https://apps.apple.com/cn/app/bark-customed-notifications/id1403753865" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">
+                <i class="fas fa-external-link-alt ml-1"></i> Bark iOS應用
+              </a>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label for="thirdPartyToken" class="block text-sm font-medium text-gray-700">第三方 API 訪問令牌</label>
+            <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-3">
+              <input type="text" id="thirdPartyToken" placeholder="留空表示不修改；輸入新值將更新"
+                class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              <button type="button" id="generateThirdPartyToken" class="btn-info text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                <i class="fas fa-magic mr-2"></i>生成令牌
+              </button>
+              <button type="button" id="clearThirdPartyToken" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                <i class="fas fa-eraser mr-2"></i>清空
+              </button>
+            </div>
+            <p id="THIRD_PARTY_API_TOKENStatus" class="mt-1 text-xs text-gray-500">載入中...</p>
+            <p class="mt-1 text-sm text-gray-500">呼叫 /api/notify/{token} 介面時需攜帶此令牌；留空表示停用第三方 API 推送。</p>
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-3">除錯設定</label>
+            <label class="inline-flex items-center cursor-pointer select-none">
+              <input type="checkbox" id="debugLogs" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+              <span class="ml-2 text-sm text-gray-700">開啟除錯日誌（影響控制檯輸出）</span>
+            </label>
+          </div>
+
+          <div class="mb-6">
+            <label for="paymentHistoryLimit" class="block text-sm font-medium text-gray-700">支付歷史保留條數</label>
+            <input type="number" id="paymentHistoryLimit" min="10" max="1000" step="1"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="預設 100">
+            <p class="mt-1 text-sm text-gray-500">自動續訂與手動續訂後僅保留最近 N 條支付歷史（建議 50~200，預設 100）。</p>
+          </div>
+          
+          <div id="telegramConfig" class="config-section">
+            <h4 class="text-md font-medium text-gray-900 mb-3">Telegram 配置</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label for="tgBotToken" class="block text-sm font-medium text-gray-700">Bot Token</label>
+                <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <input type="text" id="tgBotToken" placeholder="留空表示不修改；輸入新值將更新" class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <button type="button" id="clearTgBotToken" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                    <i class="fas fa-eraser mr-2"></i>清空
+                  </button>
+                </div>
+                <p id="TG_BOT_TOKENStatus" class="mt-1 text-xs text-gray-500">載入中...</p>
+              </div>
+              <div>
+                <label for="tgChatId" class="block text-sm font-medium text-gray-700">Chat ID</label>
+                <input type="text" id="tgChatId" placeholder="可從 @userinfobot 獲取" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="button" id="testTelegramBtn" class="btn-secondary text-white px-4 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-paper-plane mr-2"></i>測試 Telegram 通知
+              </button>
+            </div>
+          </div>
+          
+          <div id="notifyxConfig" class="config-section">
+            <h4 class="text-md font-medium text-gray-900 mb-3">NotifyX 配置</h4>
+            <div class="mb-4">
+              <label for="notifyxApiKey" class="block text-sm font-medium text-gray-700">API Key</label>
+              <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                <input type="text" id="notifyxApiKey" placeholder="留空表示不修改；輸入新值將更新" class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <button type="button" id="clearNotifyxApiKey" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                  <i class="fas fa-eraser mr-2"></i>清空
+                </button>
+              </div>
+              <p id="NOTIFYX_API_KEYStatus" class="mt-1 text-xs text-gray-500">載入中...</p>
+              <p class="mt-1 text-sm text-gray-500">從 <a href="https://www.notifyx.cn/" target="_blank" class="text-indigo-600 hover:text-indigo-800">NotifyX平臺</a> 獲取的 API Key</p>
+            </div>
+            <div class="flex justify-end">
+              <button type="button" id="testNotifyXBtn" class="btn-secondary text-white px-4 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-paper-plane mr-2"></i>測試 NotifyX 通知
+              </button>
+            </div>
+          </div>
+
+          <div id="webhookConfig" class="config-section">
+            <h4 class="text-md font-medium text-gray-900 mb-3">Webhook 通知 配置</h4>
+            <div class="grid grid-cols-1 gap-4 mb-4">
+              <div>
+                <label for="webhookUrl" class="block text-sm font-medium text-gray-700">Webhook 通知 URL</label>
+                <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <input type="url" id="webhookUrl" placeholder="留空表示不修改；輸入新值將更新" class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <button type="button" id="clearWebhookUrl" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                    <i class="fas fa-eraser mr-2"></i>清空
+                  </button>
+                </div>
+                <p id="WEBHOOK_URLStatus" class="mt-1 text-xs text-gray-500">載入中...</p>
+                <p class="mt-1 text-sm text-gray-500">請填寫自建服務或第三方平臺提供的 Webhook 地址，例如 <code>https://your-webhook-endpoint.com/path</code></p>
+              </div>
+              <div>
+                <label for="webhookMethod" class="block text-sm font-medium text-gray-700">請求方法</label>
+                <select id="webhookMethod" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <option value="POST">POST</option>
+                  <option value="GET">GET</option>
+                  <option value="PUT">PUT</option>
+                </select>
+              </div>
+              <div>
+                <label for="webhookHeaders" class="block text-sm font-medium text-gray-700">自定義請求頭 (JSON格式，可選)</label>
+                <div class="mt-1 flex flex-col sm:flex-row sm:items-start gap-3">
+                  <textarea id="webhookHeaders" rows="3" placeholder='留空表示不修改；輸入新值將更新' class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                  <button type="button" id="clearWebhookHeaders" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                    <i class="fas fa-eraser mr-2"></i>清空
+                  </button>
+                </div>
+                <p id="WEBHOOK_HEADERSStatus" class="mt-1 text-xs text-gray-500">載入中...</p>
+                <p class="mt-1 text-sm text-gray-500">JSON格式的自定義請求頭，留空使用預設</p>
+              </div>
+              <div>
+                <label for="webhookTemplate" class="block text-sm font-medium text-gray-700">訊息模板 (JSON格式，可選)</label>
+                <textarea id="webhookTemplate" rows="4" placeholder='{"title": "{{title}}", "content": "{{content}}", "timestamp": "{{timestamp}}"}' class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                <p class="mt-1 text-sm text-gray-500">支援變數: {{title}}, {{content}}, {{timestamp}}。留空使用預設格式</p>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="button" id="testWebhookBtn" class="btn-secondary text-white px-4 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-paper-plane mr-2"></i>測試 Webhook 通知
+              </button>
+            </div>
+          </div>
+
+          <div id="wechatbotConfig" class="config-section">
+            <h4 class="text-md font-medium text-gray-900 mb-3">企業微信機器人 配置</h4>
+            <div class="grid grid-cols-1 gap-4 mb-4">
+              <div>
+                <label for="wechatbotWebhook" class="block text-sm font-medium text-gray-700">機器人 Webhook URL</label>
+                <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <input type="url" id="wechatbotWebhook" placeholder="留空表示不修改；輸入新值將更新" class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <button type="button" id="clearWechatbotWebhook" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                    <i class="fas fa-eraser mr-2"></i>清空
+                  </button>
+                </div>
+                <p id="WECHATBOT_WEBHOOKStatus" class="mt-1 text-xs text-gray-500">載入中...</p>
+                <p class="mt-1 text-sm text-gray-500">從企業微信群聊中新增機器人獲取的 Webhook URL</p>
+              </div>
+              <div>
+                <label for="wechatbotMsgType" class="block text-sm font-medium text-gray-700">訊息型別</label>
+                <select id="wechatbotMsgType" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <option value="text">文字訊息</option>
+                  <option value="markdown">Markdown訊息</option>
+                </select>
+                <p class="mt-1 text-sm text-gray-500">選擇傳送的訊息格式型別</p>
+              </div>
+              <div>
+                <label for="wechatbotAtMobiles" class="block text-sm font-medium text-gray-700">@手機號 (可選)</label>
+                <input type="text" id="wechatbotAtMobiles" placeholder="13800138000,13900139000" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <p class="mt-1 text-sm text-gray-500">需要@的手機號，多個用逗號分隔，留空則不@任何人</p>
+              </div>
+              <div>
+                <label for="wechatbotAtAll" class="block text-sm font-medium text-gray-700 mb-2">@所有人</label>
+                <label class="inline-flex items-center">
+                  <input type="checkbox" id="wechatbotAtAll" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                  <span class="ml-2 text-sm text-gray-700">傳送訊息時@所有人</span>
+                </label>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="button" id="testWechatBotBtn" class="btn-secondary text-white px-4 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-paper-plane mr-2"></i>測試 企業微信機器人
+              </button>
+            </div>
+          </div>
+
+          <div id="emailConfig" class="config-section">
+            <h4 class="text-md font-medium text-gray-900 mb-3">郵件通知 配置</h4>
+            <div class="grid grid-cols-1 gap-4 mb-4">
+              <div>
+                <label for="resendApiKey" class="block text-sm font-medium text-gray-700">Resend API Key</label>
+                <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <input type="text" id="resendApiKey" placeholder="留空表示不修改；輸入新值將更新" class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <button type="button" id="clearResendApiKey" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                    <i class="fas fa-eraser mr-2"></i>清空
+                  </button>
+                </div>
+                <p id="RESEND_API_KEYStatus" class="mt-1 text-xs text-gray-500">載入中...</p>
+                <p class="mt-1 text-sm text-gray-500">從 <a href="https://resend.com/api-keys" target="_blank" class="text-indigo-600 hover:text-indigo-800">Resend控制檯</a> 獲取的 API Key</p>
+              </div>
+              <div>
+                <label for="emailFrom" class="block text-sm font-medium text-gray-700">發件人郵箱</label>
+                <input type="email" id="emailFrom" placeholder="noreply@yourdomain.com" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <p class="mt-1 text-sm text-gray-500">必須是已在Resend驗證的域名郵箱</p>
+              </div>
+              <div>
+                <label for="emailFromName" class="block text-sm font-medium text-gray-700">發件人名稱</label>
+                <input type="text" id="emailFromName" placeholder="訂閱提醒系統" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <p class="mt-1 text-sm text-gray-500">顯示在郵件中的發件人名稱</p>
+              </div>
+              <div>
+                <label for="emailTo" class="block text-sm font-medium text-gray-700">收件人郵箱</label>
+                <input type="email" id="emailTo" placeholder="user@example.com" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <p class="mt-1 text-sm text-gray-500">接收通知郵件的郵箱地址</p>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="button" id="testEmailBtn" class="btn-secondary text-white px-4 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-paper-plane mr-2"></i>測試 郵件通知
+              </button>
+            </div>
+          </div>
+
+          <div id="barkConfig" class="config-section">
+            <h4 class="text-md font-medium text-gray-900 mb-3">Bark 配置</h4>
+            <div class="grid grid-cols-1 gap-4 mb-4">
+              <div>
+                <label for="barkServer" class="block text-sm font-medium text-gray-700">伺服器地址</label>
+                <input type="url" id="barkServer" placeholder="https://api.day.app" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <p class="mt-1 text-sm text-gray-500">Bark 伺服器地址，預設為官方伺服器，也可以使用自建伺服器</p>
+              </div>
+              <div>
+                <label for="barkDeviceKey" class="block text-sm font-medium text-gray-700">裝置Key</label>
+                <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <input type="text" id="barkDeviceKey" placeholder="留空表示不修改；輸入新值將更新" class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <button type="button" id="clearBarkDeviceKey" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                    <i class="fas fa-eraser mr-2"></i>清空
+                  </button>
+                </div>
+                <p id="BARK_DEVICE_KEYStatus" class="mt-1 text-xs text-gray-500">載入中...</p>
+                <p class="mt-1 text-sm text-gray-500">從 <a href="https://apps.apple.com/cn/app/bark-customed-notifications/id1403753865" target="_blank" class="text-indigo-600 hover:text-indigo-800">Bark iOS 應用</a> 中獲取的裝置Key</p>
+              </div>
+              <div>
+                <label for="barkIsArchive" class="block text-sm font-medium text-gray-700 mb-2">儲存推送</label>
+                <label class="inline-flex items-center">
+                  <input type="checkbox" id="barkIsArchive" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                  <span class="ml-2 text-sm text-gray-700">儲存推送到歷史記錄</span>
+                </label>
+                <p class="mt-1 text-sm text-gray-500">勾選後推送訊息會儲存到 Bark 的歷史記錄中</p>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="button" id="testBarkBtn" class="btn-secondary text-white px-4 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-paper-plane mr-2"></i>測試 Bark 通知
+              </button>
+            </div>
+          </div>
+
+          <div id="gotifyConfig" class="config-section">
+            <h4 class="text-md font-medium text-gray-900 mb-3">Gotify 配置</h4>
+            <div class="grid grid-cols-1 gap-4 mb-4">
+              <div>
+                <label for="gotifyServerUrl" class="block text-sm font-medium text-gray-700">Server URL</label>
+                <input type="url" id="gotifyServerUrl" placeholder="https://gotify.example.com" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <p class="mt-1 text-sm text-gray-500">你的 Gotify 服務地址（不需要帶 /message）。</p>
+              </div>
+              <label for="gotifyAppToken" class="block text-sm font-medium text-gray-700">Application Token</label>
+              <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                <input type="text" id="gotifyAppToken" placeholder="留空表示不修改；輸入新值將更新" class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <button type="button" id="clearGotifyAppToken" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                  <i class="fas fa-eraser mr-2"></i>清空
+                </button>
+              </div>
+              <p id="GOTIFY_APP_TOKENStatus" class="mt-1 text-xs text-gray-500">載入中...</p>
+            </div>
+            <div class="flex justify-end">
+              <button type="button" id="testGotifyBtn" class="btn-secondary text-white px-4 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-paper-plane mr-2"></i>測試 Gotify 通知
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" class="btn-primary text-white px-6 py-2 rounded-md text-sm font-medium">
+            <i class="fas fa-save mr-2"></i>儲存配置
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function showToast(message, type = 'success', duration = 3000) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      
+      const icon = type === 'success' ? 'check-circle' :
+                   type === 'error' ? 'exclamation-circle' :
+                   type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+      
+      toast.innerHTML = '<div class="flex items-center"><i class="fas fa-' + icon + ' mr-2"></i><span>' + message + '</span></div>';
+      
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 100);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          if (container.contains(toast)) {
+            container.removeChild(toast);
+          }
+        }, 300);
+      }, duration);
+    }
+
+    // 記錄使用者是否點選了“清空”某個金鑰欄位；儲存時會提交給後端處理
+    const CLEAR_SECRET_FIELDS = new Set();
+
+    function setSecretStatus(key, text) {
+      const el = document.getElementById(key + 'Status');
+      if (!el) return;
+      el.textContent = text;
+    }
+
+    function updateAllSecretStatus() {
+      const cfg = window.SECRET_CONFIGURED || {};
+      setSecretStatus('TG_BOT_TOKEN', cfg.TG_BOT_TOKEN ? '已配置（已隱藏）' : '未配置');
+      setSecretStatus('NOTIFYX_API_KEY', cfg.NOTIFYX_API_KEY ? '已配置（已隱藏）' : '未配置');
+      setSecretStatus('WEBHOOK_URL', cfg.WEBHOOK_URL ? '已配置（已隱藏）' : '未配置');
+      setSecretStatus('WEBHOOK_HEADERS', cfg.WEBHOOK_HEADERS ? '已配置（已隱藏）' : '未配置');
+      setSecretStatus('WECHATBOT_WEBHOOK', cfg.WECHATBOT_WEBHOOK ? '已配置（已隱藏）' : '未配置');
+      setSecretStatus('RESEND_API_KEY', cfg.RESEND_API_KEY ? '已配置（已隱藏）' : '未配置');
+      setSecretStatus('BARK_DEVICE_KEY', cfg.BARK_DEVICE_KEY ? '已配置（已隱藏）' : '未配置');
+      setSecretStatus('THIRD_PARTY_API_TOKEN', cfg.THIRD_PARTY_API_TOKEN ? '已配置（已隱藏）' : '未配置');
+      setSecretStatus('GOTIFY_APP_TOKEN', cfg.GOTIFY_APP_TOKEN ? '已配置（已隱藏）' : '未配置');
+    }
+
+    function wireSecretInput(inputId, key) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      input.addEventListener('input', () => {
+        const value = input.value.trim();
+        if (value.length > 0) {
+          // 使用者輸入了新值，視為將被更新
+          CLEAR_SECRET_FIELDS.delete(key);
+          setSecretStatus(key, '將更新（儲存後生效）');
+        } else {
+          // 空表示“不修改”（預設）
+          const cfg = window.SECRET_CONFIGURED || {};
+          setSecretStatus(key, cfg[key] ? '已配置（已隱藏）' : '未配置');
+        }
+      });
+    }
+
+    function wireClearSecretButton(buttonId, inputId, key) {
+      const btn = document.getElementById(buttonId);
+      const input = document.getElementById(inputId);
+      if (!btn || !input) return;
+      btn.addEventListener('click', () => {
+        input.value = '';
+        CLEAR_SECRET_FIELDS.add(key);
+        setSecretStatus(key, '將清空（儲存後生效）');
+        showToast('已標記清空：' + key + '（點選“儲存配置”後生效）', 'warning', 4500);
+      });
+    }
+
+    async function loadConfig() {
+      try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+
+        // === 安全策略 ===
+        // 1) 所有 token/金鑰類欄位，後端不會下發真實值；這裡只顯示“已配置(隱藏)”狀態。
+        // 2) 不填寫 token/金鑰欄位並儲存時，後端會保持原值不變。
+        // 3) 如需清空，請點對應的“清空”按鈕（會在儲存時生效）。
+
+        document.getElementById('adminUsername').value = config.ADMIN_USERNAME || '';
+        document.getElementById('themeModeSelect').value = config.THEME_MODE || 'system';  // 回顯主題設定
+
+        // 非敏感欄位正常回顯
+        document.getElementById('tgChatId').value = config.TG_CHAT_ID || '';
+        document.getElementById('webhookMethod').value = config.WEBHOOK_METHOD || 'POST';
+        document.getElementById('webhookTemplate').value = config.WEBHOOK_TEMPLATE || '';
+        document.getElementById('wechatbotMsgType').value = config.WECHATBOT_MSG_TYPE || 'text';
+        document.getElementById('wechatbotAtMobiles').value = config.WECHATBOT_AT_MOBILES || '';
+        document.getElementById('wechatbotAtAll').checked = config.WECHATBOT_AT_ALL === 'true';
+        document.getElementById('emailFrom').value = config.EMAIL_FROM || '';
+        document.getElementById('emailFromName').value = config.EMAIL_FROM_NAME || '訂閱提醒系統';
+        document.getElementById('emailTo').value = config.EMAIL_TO || '';
+        document.getElementById('barkServer').value = config.BARK_SERVER || 'https://api.day.app';
+        document.getElementById('barkIsArchive').checked = config.BARK_IS_ARCHIVE === 'true';
+        document.getElementById('gotifyServerUrl').value = config.GOTIFY_SERVER_URL || '';
+
+        // 敏感欄位：清空輸入框（不回顯真實值）
+        document.getElementById('tgBotToken').value = '';
+        document.getElementById('notifyxApiKey').value = '';
+        document.getElementById('webhookUrl').value = '';
+        document.getElementById('webhookHeaders').value = '';
+        document.getElementById('wechatbotWebhook').value = '';
+        document.getElementById('resendApiKey').value = '';
+        document.getElementById('barkDeviceKey').value = '';
+        document.getElementById('thirdPartyToken').value = '';
+        document.getElementById('gotifyAppToken').value = '';
+
+        window.SECRET_CONFIGURED = {
+          TG_BOT_TOKEN: config.TG_BOT_TOKEN_CONFIGURED === true,
+          NOTIFYX_API_KEY: config.NOTIFYX_API_KEY_CONFIGURED === true,
+          WEBHOOK_URL: config.WEBHOOK_URL_CONFIGURED === true,
+          WEBHOOK_HEADERS: config.WEBHOOK_HEADERS_CONFIGURED === true,
+          WECHATBOT_WEBHOOK: config.WECHATBOT_WEBHOOK_CONFIGURED === true,
+          RESEND_API_KEY: config.RESEND_API_KEY_CONFIGURED === true,
+          BARK_DEVICE_KEY: config.BARK_DEVICE_KEY_CONFIGURED === true,
+          THIRD_PARTY_API_TOKEN: config.THIRD_PARTY_API_TOKEN_CONFIGURED === true,
+          GOTIFY_APP_TOKEN: config.GOTIFY_APP_TOKEN_CONFIGURED === true
+        };
+
+        updateAllSecretStatus();
+        document.getElementById('debugLogs').checked = config.DEBUG_LOGS === true;
+        document.getElementById('paymentHistoryLimit').value = Number(config.PAYMENT_HISTORY_LIMIT) || 100;
+        const notificationHoursInput = document.getElementById('notificationHours');
+        if (notificationHoursInput) {
+          // 將通知小時陣列格式化為逗號分隔的字串，便於管理員檢視與編輯
+          const hours = Array.isArray(config.NOTIFICATION_HOURS) ? config.NOTIFICATION_HOURS : [];
+          notificationHoursInput.value = hours.join(', ');
+        }
+        
+        // 載入農曆顯示設定
+        document.getElementById('showLunarGlobal').checked = config.SHOW_LUNAR === true;
+
+        // 動態生成時區選項，並設定儲存的值
+        generateTimezoneOptions(config.TIMEZONE || 'UTC');
+
+        // 處理多選通知渠道
+        const enabledNotifiers = config.ENABLED_NOTIFIERS || ['notifyx'];
+        document.querySelectorAll('input[name="enabledNotifiers"]').forEach(checkbox => {
+          checkbox.checked = enabledNotifiers.includes(checkbox.value);
+        });
+
+        toggleNotificationConfigs(enabledNotifiers);
+      } catch (error) {
+        console.error('載入配置失敗:', error);
+        showToast('載入配置失敗，請重新整理頁面重試', 'error');
+      }
+    }
+    
+    // 動態生成時區選項
+    function generateTimezoneOptions(selectedTimezone = 'UTC') {
+      const timezoneSelect = document.getElementById('timezone');
+      const fallbackTimezone = 'UTC';
+      
+      const timezones = [
+        { value: 'UTC', name: '世界標準時間', offset: '+0' },
+        { value: 'Asia/Shanghai', name: '中國標準時間', offset: '+8' },
+        { value: 'Asia/Hong_Kong', name: '香港時間', offset: '+8' },
+        { value: 'Asia/Taipei', name: '臺北時間', offset: '+8' },
+        { value: 'Asia/Singapore', name: '新加坡時間', offset: '+8' },
+        { value: 'Asia/Tokyo', name: '日本時間', offset: '+9' },
+        { value: 'Asia/Seoul', name: '韓國時間', offset: '+9' },
+        { value: 'America/New_York', name: '美國東部時間', offset: '-5' },
+        { value: 'America/Chicago', name: '美國中部時間', offset: '-6' },
+        { value: 'America/Denver', name: '美國山地時間', offset: '-7' },
+        { value: 'America/Los_Angeles', name: '美國太平洋時間', offset: '-8' },
+        { value: 'Europe/London', name: '英國時間', offset: '+0' },
+        { value: 'Europe/Paris', name: '巴黎時間', offset: '+1' },
+        { value: 'Europe/Berlin', name: '柏林時間', offset: '+1' },
+        { value: 'Europe/Moscow', name: '莫斯科時間', offset: '+3' },
+        { value: 'Australia/Sydney', name: '悉尼時間', offset: '+10' },
+        { value: 'Australia/Melbourne', name: '墨爾本時間', offset: '+10' },
+        { value: 'Pacific/Auckland', name: '奧克蘭時間', offset: '+12' }
+      ];
+      
+      // 清空現有選項
+      timezoneSelect.innerHTML = '';
+      
+      // 新增新選項
+      timezones.forEach(tz => {
+        const option = document.createElement('option');
+        option.value = tz.value;
+        option.textContent = tz.name + '（UTC' + tz.offset + '）';
+        timezoneSelect.appendChild(option);
+      });
+
+      const timezoneExists = timezones.some(tz => tz.value === selectedTimezone);
+      timezoneSelect.value = timezoneExists ? selectedTimezone : fallbackTimezone;
+
+      if (!timezoneExists) {
+        showToast('檢測到未知時區配置，已回退為 UTC，請重新確認後儲存', 'warning', 4500);
+      }
+    }
+    
+    function toggleNotificationConfigs(enabledNotifiers) {
+      const telegramConfig = document.getElementById('telegramConfig');
+      const notifyxConfig = document.getElementById('notifyxConfig');
+      const webhookConfig = document.getElementById('webhookConfig');
+      const wechatbotConfig = document.getElementById('wechatbotConfig');
+      const emailConfig = document.getElementById('emailConfig');
+      const barkConfig = document.getElementById('barkConfig');
+      const gotifyConfig = document.getElementById('gotifyConfig');
+
+      // 重置所有配置區域
+      [telegramConfig, notifyxConfig, webhookConfig, wechatbotConfig, emailConfig, barkConfig, gotifyConfig].forEach(config => {
+        config.classList.remove('active', 'inactive');
+        config.classList.add('inactive');
+      });
+
+      // 啟用選中的配置區域
+      enabledNotifiers.forEach(type => {
+        if (type === 'telegram') {
+          telegramConfig.classList.remove('inactive');
+          telegramConfig.classList.add('active');
+        } else if (type === 'notifyx') {
+          notifyxConfig.classList.remove('inactive');
+          notifyxConfig.classList.add('active');
+        } else if (type === 'webhook') {
+          webhookConfig.classList.remove('inactive');
+          webhookConfig.classList.add('active');
+        } else if (type === 'wechatbot') {
+          wechatbotConfig.classList.remove('inactive');
+          wechatbotConfig.classList.add('active');
+        } else if (type === 'email') {
+          emailConfig.classList.remove('inactive');
+          emailConfig.classList.add('active');
+        } else if (type === 'bark') {
+          barkConfig.classList.remove('inactive');
+          barkConfig.classList.add('active');
+        } else if (type === 'gotify') {
+          gotifyConfig.classList.remove('inactive');
+          gotifyConfig.classList.add('active');
+        }
+      });
+    }
+
+    document.querySelectorAll('input[name="enabledNotifiers"]').forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        const enabledNotifiers = Array.from(document.querySelectorAll('input[name="enabledNotifiers"]:checked'))
+          .map(cb => cb.value);
+        toggleNotificationConfigs(enabledNotifiers);
+      });
+    });
+    
+    document.getElementById('configForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const enabledNotifiers = Array.from(document.querySelectorAll('input[name="enabledNotifiers"]:checked'))
+        .map(cb => cb.value);
+
+      if (enabledNotifiers.length === 0) {
+        showToast('請至少選擇一種通知方式', 'warning');
+        return;
+      }
+
+      const config = {
+        ADMIN_USERNAME: document.getElementById('adminUsername').value.trim(),
+        THEME_MODE: document.getElementById('themeModeSelect').value,      // 儲存主題設定
+
+        // token/金鑰類欄位：預設留空=不修改；要清空則走 CLEAR_SECRET_FIELDS
+        TG_BOT_TOKEN: document.getElementById('tgBotToken').value.trim(),
+        NOTIFYX_API_KEY: document.getElementById('notifyxApiKey').value.trim(),
+        WEBHOOK_URL: document.getElementById('webhookUrl').value.trim(),
+        WEBHOOK_HEADERS: document.getElementById('webhookHeaders').value.trim(),
+        WECHATBOT_WEBHOOK: document.getElementById('wechatbotWebhook').value.trim(),
+        RESEND_API_KEY: document.getElementById('resendApiKey').value.trim(),
+        BARK_DEVICE_KEY: document.getElementById('barkDeviceKey').value.trim(),
+        THIRD_PARTY_API_TOKEN: document.getElementById('thirdPartyToken').value.trim(),
+        GOTIFY_APP_TOKEN: document.getElementById('gotifyAppToken').value.trim(),
+
+        // 非敏感欄位正常提交
+        TG_CHAT_ID: document.getElementById('tgChatId').value.trim(),
+        WEBHOOK_METHOD: document.getElementById('webhookMethod').value,
+        WEBHOOK_TEMPLATE: document.getElementById('webhookTemplate').value.trim(),
+        SHOW_LUNAR: document.getElementById('showLunarGlobal').checked,
+        WECHATBOT_MSG_TYPE: document.getElementById('wechatbotMsgType').value,
+        WECHATBOT_AT_MOBILES: document.getElementById('wechatbotAtMobiles').value.trim(),
+        WECHATBOT_AT_ALL: document.getElementById('wechatbotAtAll').checked.toString(),
+        EMAIL_FROM: document.getElementById('emailFrom').value.trim(),
+        EMAIL_FROM_NAME: document.getElementById('emailFromName').value.trim(),
+        EMAIL_TO: document.getElementById('emailTo').value.trim(),
+        BARK_SERVER: document.getElementById('barkServer').value.trim() || 'https://api.day.app',
+        BARK_IS_ARCHIVE: document.getElementById('barkIsArchive').checked.toString(),
+        GOTIFY_SERVER_URL: document.getElementById('gotifyServerUrl').value.trim(),
+        ENABLED_NOTIFIERS: enabledNotifiers,
+        TIMEZONE: document.getElementById('timezone').value.trim(),
+
+        // 標記“清空哪些金鑰欄位”
+        CLEAR_SECRET_FIELDS: Array.from(CLEAR_SECRET_FIELDS),
+
+        DEBUG_LOGS: document.getElementById('debugLogs').checked === true,
+        PAYMENT_HISTORY_LIMIT: (() => {
+          const raw = Number(document.getElementById('paymentHistoryLimit').value);
+          if (!Number.isFinite(raw)) return 100;
+          return Math.min(1000, Math.max(10, Math.floor(raw)));
+        })(),
+        // 前端先行整理通知小時列表，後端仍會再次校驗
+        NOTIFICATION_HOURS: (() => {
+          const raw = document.getElementById('notificationHours').value.trim();
+          if (!raw) {
+            return [];
+          }
+          return raw
+            .split(/[,，\s]+/)
+            .map(item => item.trim())
+            .filter(item => item.length > 0);
+        })()
+      };
+
+      const passwordField = document.getElementById('adminPassword');
+      if (passwordField.value.trim()) {
+        config.ADMIN_PASSWORD = passwordField.value.trim();
+      }
+
+      const submitButton = e.target.querySelector('button[type="submit"]');
+      const originalContent = submitButton.innerHTML;
+      submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>儲存中...';
+      submitButton.disabled = true;
+
+      try {
+        const response = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showToast('配置儲存成功', 'success');
+          if (window.updateAppTheme) {    // 儲存成功後立即應用主題，無需重新整理
+            window.updateAppTheme(config.THEME_MODE);
+          }
+          passwordField.value = '';
+          
+          // 前端始終顯示瀏覽器本地時區
+          globalTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+          showSystemTime();
+          
+          // 標記時區已更新，供其他頁面檢測
+          localStorage.setItem('timezoneUpdated', Date.now().toString());
+          
+          // 如果當前在訂閱列表頁面，則自動重新整理頁面以更新時區顯示
+          if (window.location.pathname === '/admin') {
+            window.location.reload();
+          }
+        } else {
+          showToast('配置儲存失敗: ' + (result.message || '未知錯誤'), 'error');
+        }
+      } catch (error) {
+        console.error('儲存配置失敗:', error);
+        showToast('儲存配置失敗，請稍後再試', 'error');
+      } finally {
+        submitButton.innerHTML = originalContent;
+        submitButton.disabled = false;
+      }
+    });
+    
+    async function testNotification(type) {
+      const buttonId = type === 'telegram' ? 'testTelegramBtn' :
+                      type === 'notifyx' ? 'testNotifyXBtn' :
+                      type === 'wechatbot' ? 'testWechatBotBtn' :
+                      type === 'email' ? 'testEmailBtn' :
+                      type === 'bark' ? 'testBarkBtn' :
+                      type === 'gotify' ? 'testGotifyBtn' : 'testWebhookBtn';
+      const button = document.getElementById(buttonId);
+      if (!button) {
+        showToast('測試按鈕不存在，請重新整理頁面後重試', 'error');
+        return;
+      }
+      const originalContent = button.innerHTML;
+      const serviceName = type === 'telegram' ? 'Telegram' :
+                          type === 'notifyx' ? 'NotifyX' :
+                          type === 'wechatbot' ? '企業微信機器人' :
+                          type === 'email' ? '郵件通知' :
+                          type === 'bark' ? 'Bark' :
+                          type === 'gotify' ? 'Gotify' : 'Webhook 通知';
+
+      button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>測試中...';
+      button.disabled = true;
+
+      const config = {};
+      // 方案 B：敏感欄位不回顯。測試通知時如果使用者沒填，就按“使用伺服器已儲存的配置”處理。
+      if (type === 'telegram') {
+        config.TG_CHAT_ID = document.getElementById('tgChatId').value.trim();
+        const token = document.getElementById('tgBotToken').value.trim();
+        if (token) config.TG_BOT_TOKEN = token;
+      } else if (type === 'notifyx') {
+        const key = document.getElementById('notifyxApiKey').value.trim();
+        if (key) config.NOTIFYX_API_KEY = key;
+      } else if (type === 'webhook') {
+        config.WEBHOOK_METHOD = document.getElementById('webhookMethod').value;
+        config.WEBHOOK_TEMPLATE = document.getElementById('webhookTemplate').value.trim();
+        const url = document.getElementById('webhookUrl').value.trim();
+        const headers = document.getElementById('webhookHeaders').value.trim();
+        if (url) config.WEBHOOK_URL = url;
+        if (headers) config.WEBHOOK_HEADERS = headers;
+      } else if (type === 'wechatbot') {
+        config.WECHATBOT_MSG_TYPE = document.getElementById('wechatbotMsgType').value;
+        config.WECHATBOT_AT_MOBILES = document.getElementById('wechatbotAtMobiles').value.trim();
+        config.WECHATBOT_AT_ALL = document.getElementById('wechatbotAtAll').checked.toString();
+        const url = document.getElementById('wechatbotWebhook').value.trim();
+        if (url) config.WECHATBOT_WEBHOOK = url;
+      } else if (type === 'email') {
+        const key = document.getElementById('resendApiKey').value.trim();
+        if (key) config.RESEND_API_KEY = key;
+        config.EMAIL_FROM = document.getElementById('emailFrom').value.trim();
+        config.EMAIL_FROM_NAME = document.getElementById('emailFromName').value.trim();
+        config.EMAIL_TO = document.getElementById('emailTo').value.trim();
+      } else if (type === 'bark') {
+        config.BARK_SERVER = document.getElementById('barkServer').value.trim() || 'https://api.day.app';
+        const key = document.getElementById('barkDeviceKey').value.trim();
+        if (key) config.BARK_DEVICE_KEY = key;
+        config.BARK_IS_ARCHIVE = document.getElementById('barkIsArchive').checked.toString();
+      } else if (type === 'gotify') {
+        config.GOTIFY_SERVER_URL = document.getElementById('gotifyServerUrl').value.trim();
+        const token = document.getElementById('gotifyAppToken').value.trim();
+        if (token) config.GOTIFY_APP_TOKEN = token;
+
+        if (!config.GOTIFY_SERVER_URL) {
+          showToast('請先填寫 Gotify Server URL', 'warning');
+          button.innerHTML = originalContent;
+          button.disabled = false;
+          return;
+        }
+      }
+
+      try {
+        const response = await fetch('/api/test-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: type, ...config })
+        });
+
+        let result = null;
+        try {
+          result = await response.json();
+        } catch (_) {
+          result = { success: false, message: '服務返回了無法解析的響應' };
+        }
+
+        if (response.ok && result.success) {
+          showToast(serviceName + ' 通知測試成功！', 'success');
+        } else {
+          const message = (result && result.message) ? result.message : ('HTTP ' + response.status);
+          showToast(serviceName + ' 通知測試失敗: ' + message, 'error', 4500);
+        }
+      } catch (error) {
+        console.error('測試通知失敗:', error);
+        showToast(serviceName + ' 測試失敗，請檢查網路後重試', 'error');
+      } finally {
+        button.innerHTML = originalContent;
+        button.disabled = false;
+      }
+    }
+    
+    document.getElementById('testTelegramBtn').addEventListener('click', () => {
+      testNotification('telegram');
+    });
+    
+    document.getElementById('testNotifyXBtn').addEventListener('click', () => {
+      testNotification('notifyx');
+    });
+
+    document.getElementById('testWebhookBtn').addEventListener('click', () => {
+      testNotification('webhook');
+    });
+
+    document.getElementById('testWechatBotBtn').addEventListener('click', () => {
+      testNotification('wechatbot');
+    });
+
+    document.getElementById('testEmailBtn').addEventListener('click', () => {
+      testNotification('email');
+    });
+
+    document.getElementById('testBarkBtn').addEventListener('click', () => {
+      testNotification('bark');
+    });
+
+    document.getElementById('testGotifyBtn').addEventListener('click', () => {
+      testNotification('gotify');
+    });
+
+    document.getElementById('generateThirdPartyToken').addEventListener('click', () => {
+      try {
+        // 生成 32 位隨機令牌，避免出現特殊字元，方便寫入 URL
+        const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const buffer = new Uint8Array(32);
+        window.crypto.getRandomValues(buffer);
+        const token = Array.from(buffer).map(v => charset[v % charset.length]).join('');
+        const input = document.getElementById('thirdPartyToken');
+        input.value = token;
+        input.dispatchEvent(new Event('input'));
+        showToast('已生成新的第三方 API 令牌，請儲存配置後生效', 'info');
+      } catch (error) {
+        console.error('生成令牌失敗:', error);
+        showToast('生成令牌失敗，請手動輸入', 'error');
+      }
+    });
+
+    window.addEventListener('load', () => {
+      // 繫結敏感欄位輸入/清空按鈕
+      wireSecretInput('tgBotToken', 'TG_BOT_TOKEN');
+      wireSecretInput('notifyxApiKey', 'NOTIFYX_API_KEY');
+      wireSecretInput('webhookUrl', 'WEBHOOK_URL');
+      wireSecretInput('webhookHeaders', 'WEBHOOK_HEADERS');
+      wireSecretInput('wechatbotWebhook', 'WECHATBOT_WEBHOOK');
+      wireSecretInput('resendApiKey', 'RESEND_API_KEY');
+      wireSecretInput('barkDeviceKey', 'BARK_DEVICE_KEY');
+      wireSecretInput('thirdPartyToken', 'THIRD_PARTY_API_TOKEN');
+      wireSecretInput('gotifyAppToken', 'GOTIFY_APP_TOKEN');
+
+      wireClearSecretButton('clearTgBotToken', 'tgBotToken', 'TG_BOT_TOKEN');
+      wireClearSecretButton('clearNotifyxApiKey', 'notifyxApiKey', 'NOTIFYX_API_KEY');
+      wireClearSecretButton('clearWebhookUrl', 'webhookUrl', 'WEBHOOK_URL');
+      wireClearSecretButton('clearWebhookHeaders', 'webhookHeaders', 'WEBHOOK_HEADERS');
+      wireClearSecretButton('clearWechatbotWebhook', 'wechatbotWebhook', 'WECHATBOT_WEBHOOK');
+      wireClearSecretButton('clearResendApiKey', 'resendApiKey', 'RESEND_API_KEY');
+      wireClearSecretButton('clearBarkDeviceKey', 'barkDeviceKey', 'BARK_DEVICE_KEY');
+      wireClearSecretButton('clearThirdPartyToken', 'thirdPartyToken', 'THIRD_PARTY_API_TOKEN');
+      wireClearSecretButton('clearGotifyAppToken', 'gotifyAppToken', 'GOTIFY_APP_TOKEN');
+
+      loadConfig();
+    });
+    
+    // 前端展示時區（固定使用瀏覽器本地時區）
+    let globalTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    let systemTimeTimer = null;
+    let timezoneCheckTimer = null;
+    
+    // 即時顯示系統時間和時區
+    async function showSystemTime() {
+      try {
+        // 獲取後臺配置的時區
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        globalTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+        
+        // 格式化當前時間
+        function formatTime(dt, tz) {
+          return dt.toLocaleString('zh-CN', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        function formatTimezoneDisplay(tz) {
+          try {
+            // 使用更準確的時區偏移計算方法
+            const now = new Date();
+            const dtf = new Intl.DateTimeFormat('en-US', {
+              timeZone: tz,
+              hour12: false,
+              year: 'numeric', month: '2-digit', day: '2-digit',
+              hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+            const parts = dtf.formatToParts(now);
+            const get = type => Number(parts.find(x => x.type === type).value);
+            const target = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
+            const utc = now.getTime();
+            const offset = Math.round((target - utc) / (1000 * 60 * 60));
+            
+            // 時區中文名稱對映
+            const timezoneNames = {
+              'UTC': '世界標準時間',
+              'Asia/Shanghai': '中國標準時間',
+              'Asia/Hong_Kong': '香港時間',
+              'Asia/Taipei': '臺北時間',
+              'Asia/Singapore': '新加坡時間',
+              'Asia/Tokyo': '日本時間',
+              'Asia/Seoul': '韓國時間',
+              'America/New_York': '美國東部時間',
+              'America/Los_Angeles': '美國太平洋時間',
+              'America/Chicago': '美國中部時間',
+              'America/Denver': '美國山地時間',
+              'Europe/London': '英國時間',
+              'Europe/Paris': '巴黎時間',
+              'Europe/Berlin': '柏林時間',
+              'Europe/Moscow': '莫斯科時間',
+              'Australia/Sydney': '悉尼時間',
+              'Australia/Melbourne': '墨爾本時間',
+              'Pacific/Auckland': '奧克蘭時間'
+            };
+            
+            const offsetStr = offset >= 0 ? '+' + offset : offset;
+            const timezoneName = timezoneNames[tz] || tz;
+            return timezoneName + ' (UTC' + offsetStr + ')';
+          } catch (error) {
+            console.error('格式化時區顯示失敗:', error);
+            return tz;
+          }
+        }
+        function update() {
+          const now = new Date();
+          const timeStr = formatTime(now, globalTimezone);
+          const tzStr = formatTimezoneDisplay(globalTimezone);
+          const el = document.getElementById('systemTimeDisplay');
+          if (el) {
+            el.textContent = timeStr + '  ' + tzStr;
+          }
+          // 更新移動端顯示 (新增)
+          const mobileEl = document.getElementById('mobileTimeDisplay');
+          if (mobileEl) {
+            mobileEl.textContent = timeStr + ' ' + tzStr;
+          }
+        }
+        update();
+
+        if (systemTimeTimer) {
+          clearInterval(systemTimeTimer);
+        }
+        systemTimeTimer = setInterval(update, 1000);
+
+        if (timezoneCheckTimer) {
+          clearInterval(timezoneCheckTimer);
+        }
+        timezoneCheckTimer = setInterval(async () => {
+          try {
+            const response = await fetch('/api/config');
+            await response.json();
+            const newTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+            if (globalTimezone !== newTimezone) {
+              globalTimezone = newTimezone;
+              update();
+            }
+          } catch (error) {
+            console.error('檢查時區更新失敗:', error);
+          }
+        }, 30000);
+      } catch (e) {
+        // 出錯時顯示本地時間
+        const el = document.getElementById('systemTimeDisplay');
+        if (el) {
+          el.textContent = new Date().toLocaleString();
+        }
+      }
+    }
+    showSystemTime();
+    // --- 新增：移動端選單控制指令碼 ---
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    if (mobileMenuBtn && mobileMenu) {
+      const syncMobileMenuState = () => {
+        const icon = mobileMenuBtn.querySelector('i');
+        const isHidden = mobileMenu.classList.contains('hidden');
+        mobileMenuBtn.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+        if (icon) {
+          icon.classList.toggle('fa-bars', isHidden);
+          icon.classList.toggle('fa-times', !isHidden);
+        }
+      };
+
+      mobileMenuBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+        syncMobileMenuState();
+      });
+      
+      mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.add('hidden');
+          syncMobileMenuState();
+        });
+      });
+
+      document.addEventListener('click', (event) => {
+        if (mobileMenu.classList.contains('hidden')) return;
+        if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+          mobileMenu.classList.add('hidden');
+          syncMobileMenuState();
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
+          mobileMenu.classList.add('hidden');
+          syncMobileMenuState();
+        }
+      });
+
+      syncMobileMenuState();
+    }
+  </script>
+</body>
+</html>

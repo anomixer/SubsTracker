@@ -1,5 +1,5 @@
 name = "subscription-manager"
-main = "index.js"
+main = "src/index.js"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
@@ -9,15 +9,11 @@ name = "subscription-manager"
 [env.staging]
 name = "subscription-manager-staging"
 
-# KV 名稱空間配置
-[[kv_namespaces]]
-binding = "SUBSCRIPTIONS_KV"
-preview_id = "your-preview-kv-namespace-id"
-id = "your-production-kv-namespace-id"
+# KV 命名空間配置（預設模板不預設固定 ID，執行 npm run setup 自動生成）
 
-# 定時任務配置 - 每天早上8點檢查
+# 定時任務配置 - 每小時檢查一次（UTC）
 [triggers]
-crons = ["0 8 * * *"]
+crons = ["0 * * * *"]
 
 # 環境變數（可選，也可以在 Cloudflare Dashboard 中設定）
 [vars]

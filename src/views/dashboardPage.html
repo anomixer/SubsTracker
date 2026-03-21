@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>儀表盤 - SubsTracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  ${themeResources}  <style>
+    .stat-card{background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:transform 0.2s,box-shadow 0.2s}
+    .stat-card:hover{transform:translateY(-4px);box-shadow:0 4px 16px rgba(0,0,0,0.15)}
+    .stat-card-header{color:#6b7280;font-size:0.875rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem}
+    .stat-card-value{font-size:2rem;font-weight:700;color:#1f2937;margin-bottom:0.25rem}
+    .stat-card-subtitle{color:#9ca3af;font-size:0.875rem}
+    .stat-card-trend{display:inline-flex;align-items:center;gap:0.25rem;font-size:0.875rem;margin-top:0.5rem;padding:0.25rem 0.5rem;border-radius:6px}
+    .stat-card-trend.up{color:#10b981;background:#d1fae5}
+    .stat-card-trend.down{color:#ef4444;background:#fee2e2}
+    .stat-card-trend.flat{color:#6b7280;background:#f3f4f6}
+    .list-item{display:flex;align-items:center;justify-content:space-between;padding:1rem;border-radius:8px;transition:background 0.2s}
+    .list-item:hover{background:#f9fafb}
+    .list-item:not(:last-child){border-bottom:1px solid #f3f4f6}
+    .list-item-content{flex:1}
+    .list-item-name{font-weight:600;color:#1f2937;margin-bottom:0.25rem}
+    .list-item-meta{display:flex;align-items:center;gap:1rem;font-size:0.875rem;color:#6b7280;flex-wrap:wrap}
+    .list-item-amount{font-size:1.125rem;font-weight:700;color:#10b981}
+    .list-item-badge{display:inline-block;padding:0.25rem 0.75rem;border-radius:12px;font-size:0.75rem;font-weight:500;background:#e0e7ff;color:#4f46e5}
+    .ranking-item{margin-bottom:1rem}
+    .ranking-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem}
+    .ranking-item-name{font-weight:600;color:#1f2937}
+    .ranking-item-value{display:flex;align-items:center;gap:0.5rem;font-size:0.875rem}
+    .ranking-item-amount{font-weight:700;color:#1f2937}
+    .ranking-item-percentage{color:#10b981}
+    .ranking-progress{width:100%;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden}
+    .ranking-progress-bar{height:100%;border-radius:4px;transition:width 0.6s ease}
+    .ranking-progress-bar.color-1{background:linear-gradient(90deg,#6366f1,#8b5cf6)}
+    .ranking-progress-bar.color-2{background:linear-gradient(90deg,#10b981,#059669)}
+    .ranking-progress-bar.color-3{background:linear-gradient(90deg,#f59e0b,#d97706)}
+    .ranking-progress-bar.color-4{background:linear-gradient(90deg,#ef4444,#dc2626)}
+    .ranking-progress-bar.color-5{background:linear-gradient(90deg,#8b5cf6,#7c3aed)}
+    .empty-state{text-align:center;padding:3rem 1rem;color:#9ca3af}
+    .empty-state-icon{font-size:3rem;margin-bottom:1rem;opacity:0.5}
+    .empty-state-text{font-size:0.875rem}
+    /* === Dashboard 暗黑模式修復 === */
+    html.dark .stat-card {
+      background: #1f2937; /* 深色卡片背景 */
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    }
+    html.dark .stat-card-header { color: #9ca3af; }
+    html.dark .stat-card-value { color: #f3f4f6; } /* 白色文字 */
+    html.dark .stat-card-subtitle { color: #6b7280; } 
+    html.dark .stat-card-trend.flat { background: #374151; color: #9ca3af; }
+    html.dark .stat-card-trend.up { background: rgba(16, 185, 129, 0.2); }
+    html.dark .stat-card-trend.down { background: rgba(239, 68, 68, 0.2); }
+    html.dark .list-item:hover { background: #374151; }
+    html.dark .list-item:not(:last-child) { border-bottom-color: #374151; }
+    html.dark .list-item-name { color: #f3f4f6; } /* 列表項名稱變白 */
+    html.dark .list-item-meta { color: #9ca3af; }
+    html.dark .list-item-badge { background: #3730a3; color: #c7d2fe; }
+    html.dark .ranking-item-name { color: #f3f4f6; } /* 排行榜名稱變白 */
+    html.dark .ranking-item-amount { color: #e5e7eb; } /* 金額變白 */
+    html.dark .ranking-progress { background: #374151; }
+    /* 修復右上角的標籤 */
+    html.dark .bg-indigo-100 { background-color: rgba(99, 102, 241, 0.2) !important; color: #a5b4fc !important; }
+    html.dark .text-indigo-800 { color: #c7d2fe !important; }
+    .loading-skeleton{background:linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);background-size:200% 100%;animation:loading 1.5s infinite;height:100px;border-radius:8px}
+    /* 暗黑模式骨架屏 */
+    html.dark .loading-skeleton { background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%); }
+    @keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  </style>
+</head>
+<body class="bg-gray-50">
+  <nav class="bg-white shadow-md relative z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center shrink-0">
+          <div class="flex items-center">
+            <i class="fas fa-calendar-check text-indigo-600 text-2xl mr-2"></i>
+            <span class="font-bold text-xl text-gray-800">訂閱管理系統</span>
+          </div>
+          <span id="systemTimeDisplay" class="ml-4 text-base text-indigo-600 font-normal hidden md:block pt-1"></span>
+        </div>
+        
+        <div class="hidden md:flex items-center space-x-4 ml-auto">
+          <a href="/admin/dashboard" class="text-indigo-600 border-b-2 border-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fas fa-chart-line mr-1"></i>儀表盤
+          </a>
+          <a href="/admin" class="text-gray-700 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300 px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fas fa-list mr-1"></i>訂閱列表
+          </a>
+          <a href="/admin/config" class="text-gray-700 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300 px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fas fa-cog mr-1"></i>系統配置
+          </a>
+          <a href="/api/logout" class="text-gray-700 hover:text-red-600 border-b-2 border-transparent hover:border-red-300 px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fas fa-sign-out-alt mr-1"></i>退出登入
+          </a>
+        </div>
+
+        <div class="flex items-center md:hidden ml-auto">
+          <button id="mobile-menu-btn" type="button" aria-expanded="false" aria-label="切換導航選單" class="text-gray-600 hover:text-indigo-600 focus:outline-none p-2 rounded-md hover:bg-gray-100 active:bg-gray-200 transition-colors">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-b border-gray-200 w-full">
+      <div class="px-4 pt-2 pb-4 space-y-2">
+        <div id="mobileTimeDisplay" class="px-3 py-2 text-xs text-indigo-600 text-right border-b border-gray-100 mb-2"></div>
+        <a href="/admin/dashboard" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 active:bg-indigo-100 transition-colors">
+          <i class="fas fa-chart-line w-6 text-center mr-2"></i>儀表盤
+        </a>
+        <a href="/admin" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 active:bg-indigo-100 transition-colors">
+          <i class="fas fa-list w-6 text-center mr-2"></i>訂閱列表
+        </a>
+        <a href="/admin/config" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 active:bg-indigo-100 transition-colors">
+          <i class="fas fa-cog w-6 text-center mr-2"></i>系統配置
+        </a>
+        <a href="/api/logout" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 active:bg-red-100 transition-colors">
+          <i class="fas fa-sign-out-alt w-6 text-center mr-2"></i>退出登入
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-gray-800">📊 儀表板</h2>
+      <p class="text-sm text-gray-500 mt-1">訂閱費用和活動概覽（統計金額已摺合為 CNY）</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-history text-indigo-500"></i>
+          <h3 class="text-lg font-medium text-gray-900">自動提醒任務狀態</h3>
+        </div>
+        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">Cron 可觀測性</span>
+      </div>
+      <div class="p-6" id="schedulerStatus">
+        <div class="loading-skeleton"></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6" id="statsGrid">
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-calendar-check text-blue-500"></i>
+          <h3 class="text-lg font-medium text-gray-900">最近支付</h3>
+        </div>
+        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">過去7天</span>
+      </div>
+      <div class="p-6" id="recentPayments">
+        <div class="loading-skeleton"></div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-clock text-yellow-500"></i>
+          <h3 class="text-lg font-medium text-gray-900">即將續費</h3>
+        </div>
+        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">未來7天</span>
+      </div>
+      <div class="p-6" id="upcomingRenewals">
+        <div class="loading-skeleton"></div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-stream text-indigo-500"></i>
+          <h3 class="text-lg font-medium text-gray-900">自動提醒任務歷史（最近10次）</h3>
+        </div>
+      </div>
+      <div class="p-6" id="schedulerStatusHistory">
+        <div class="loading-skeleton"></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-chart-bar text-purple-500"></i>
+            <h3 class="text-lg font-medium text-gray-900">按型別支出排行</h3>
+          </div>
+          <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">年度統計 (摺合CNY)</span>
+        </div>
+        <div class="p-6" id="expenseByType">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-folder text-green-500"></i>
+            <h3 class="text-lg font-medium text-gray-900">按分類支出統計</h3>
+          </div>
+          <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">年度統計 (摺合CNY)</span>
+        </div>
+        <div class="p-6" id="expenseByCategory">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 定義貨幣符號對映
+    const currencySymbols = {
+      'CNY': '¥', 'USD': '$', 'HKD': 'HK$', 'TWD': 'NT$', 
+      'JPY': '¥', 'EUR': '€', 'GBP': '£', 'KRW': '₩', 'TRY': '₺'
+    };
+    function getSymbol(currency) {
+      return currencySymbols[currency] || '¥';
+    }
+
+    // 前端統一本地時區顯示
+    async function showSystemTime() {
+      try {
+        const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+        function formatTimezoneDisplay(tz) {
+          try {
+            const now = new Date();
+            const dtf = new Intl.DateTimeFormat('en-US', {
+              timeZone: tz,
+              hour12: false,
+              year: 'numeric', month: '2-digit', day: '2-digit',
+              hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+            const parts = dtf.formatToParts(now);
+            const get = type => Number(parts.find(x => x.type === type).value);
+            const target = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
+            const utc = now.getTime();
+            const offset = Math.round((target - utc) / (1000 * 60 * 60));
+            const offsetStr = offset >= 0 ? '+' + offset : offset;
+            return `${tz} (UTC${offsetStr})`;
+          } catch (error) {
+            console.error('格式化時區顯示失敗:', error);
+            return tz;
+          }
+        }
+
+        function update() {
+          const now = new Date();
+          const timeStr = now.toLocaleString('zh-CN', {
+            timeZone: localTimezone,
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+          });
+          const tzStr = formatTimezoneDisplay(localTimezone);
+          const el = document.getElementById('systemTimeDisplay');
+          if (el) {
+            el.textContent = `${timeStr}  ${tzStr}`;
+          }
+          const mobileEl = document.getElementById('mobileTimeDisplay');
+          if (mobileEl) {
+            mobileEl.textContent = `${timeStr} ${tzStr}`;
+          }
+        }
+
+        update();
+        setInterval(update, 1000);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadDashboardData(){
+      try {
+        const r=await fetch('/api/dashboard/stats');
+        const d=await r.json();
+        if(!d.success) throw new Error(d.message||'載入失敗');
+        
+        const data=d.data;
+
+        const schedulerStatusEl = document.getElementById('schedulerStatus');
+        if (schedulerStatusEl) {
+          const status = data.schedulerStatus;
+          if (!status) {
+            schedulerStatusEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🕐</div><div class="empty-state-text">暫無定時任務執行記錄（等待下一次 Cron）</div></div>';
+          } else {
+            const sendResult = status.sendResult || {};
+            const runAt = status.lastRunAt ? new Date(status.lastRunAt).toLocaleString('zh-CN') : '未知';
+            const configuredHours = Array.isArray(status.configuredHours) && status.configuredHours.length > 0
+              ? status.configuredHours.join(', ')
+              : '全部時段';
+            const sentBadge = status.sent
+              ? '<span class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">本次有傳送</span>'
+              : '<span class="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-700">本次未傳送</span>';
+
+            schedulerStatusEl.innerHTML = `
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-gray-50 rounded-md p-3">
+                  <div class="text-gray-500">最近執行時間</div>
+                  <div class="text-gray-900 font-medium mt-1">${runAt}</div>
+                </div>
+                <div class="bg-gray-50 rounded-md p-3">
+                  <div class="text-gray-500">狀態</div>
+                  <div class="mt-1">${sentBadge}</div>
+                </div>
+                <div class="bg-gray-50 rounded-md p-3">
+                  <div class="text-gray-500">當前小時 / 配置時段（UTC）</div>
+                  <div class="text-gray-900 font-medium mt-1">${status.currentHour || '--'} / ${configuredHours}</div>
+                </div>
+                <div class="bg-gray-50 rounded-md p-3">
+                  <div class="text-gray-500">檢查與命中</div>
+                  <div class="text-gray-900 font-medium mt-1">檢查 ${status.checkedSubscriptions || 0} 條，命中 ${status.expiringMatched || 0} 條</div>
+                </div>
+                <div class="bg-gray-50 rounded-md p-3 md:col-span-2">
+                  <div class="text-gray-500">傳送結果</div>
+                  <div class="text-gray-900 font-medium mt-1">嘗試 ${sendResult.attempted || 0} 個渠道，成功 ${sendResult.successCount || 0}，失敗 ${sendResult.failedCount || 0}，去重跳過 ${status.dedupeSkipped || 0}</div>
+                  <div class="text-xs text-gray-500 mt-1">${status.reason || '暫無詳情'}</div>
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        const schedulerHistory = Array.isArray(data.schedulerStatusHistory) ? data.schedulerStatusHistory : [];
+        const schedulerHistoryEl = document.getElementById('schedulerStatusHistory');
+        if (schedulerHistoryEl) {
+          if (schedulerHistory.length === 0) {
+            schedulerHistoryEl.innerHTML = '<div class="text-sm text-gray-500">暫無歷史記錄</div>';
+          } else {
+            schedulerHistoryEl.innerHTML = schedulerHistory.slice(0, 10).map(item => {
+              const when = item.lastRunAt ? new Date(item.lastRunAt).toLocaleString('zh-CN') : '未知時間';
+              const sent = item.sent ? '已傳送' : '未傳送';
+              const reason = item.reason || '-';
+              return `<div class="py-2 border-b border-gray-100 last:border-b-0 text-sm"><div class="font-medium text-gray-800">${when} · ${sent}</div><div class="text-xs text-gray-500 mt-1">${reason}</div></div>`;
+            }).join('');
+          }
+        }
+
+        document.getElementById('statsGrid').innerHTML=`
+          <div class="stat-card">
+            <div class="stat-card-header">月度支出 (CNY)</div>
+            <div class="stat-card-value">¥${data.monthlyExpense.amount.toFixed(2)}</div>
+            <div class="stat-card-subtitle">本月摺合支出</div>
+            <div class="stat-card-trend ${data.monthlyExpense.trendDirection}">
+              <i class="fas fa-arrow-${data.monthlyExpense.trendDirection==='up'?'up':data.monthlyExpense.trendDirection==='down'?'down':'right'}"></i>
+              ${data.monthlyExpense.trend}%
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">年度支出 (CNY)</div>
+            <div class="stat-card-value">¥${data.yearlyExpense.amount.toFixed(2)}</div>
+            <div class="stat-card-subtitle">月均支出: ¥${data.yearlyExpense.monthlyAverage.toFixed(2)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">活躍訂閱</div>
+            <div class="stat-card-value">${data.activeSubscriptions.active}</div>
+            <div class="stat-card-subtitle">總訂閱數: ${data.activeSubscriptions.total}</div>
+            ${data.activeSubscriptions.expiringSoon>0?`<div class="stat-card-trend down"><i class="fas fa-exclamation-circle"></i>${data.activeSubscriptions.expiringSoon} 即將到期</div>`:''}
+          </div>
+        `;
+        
+        const rp=document.getElementById('recentPayments');
+        rp.innerHTML=data.recentPayments.length===0?'<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">過去7天內沒有支付記錄</div></div>':
+        data.recentPayments.map(s=>`
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-name">${s.name}</div>
+              <div class="list-item-meta">
+                <span><i class="fas fa-calendar"></i> ${new Date(s.paymentDate).toLocaleDateString('zh-CN')}</span>
+                ${s.customType?`<span class="list-item-badge">${s.customType}</span>`:''}
+              </div>
+            </div>
+            <div class="list-item-amount">${getSymbol(s.currency)}${(s.amount||0).toFixed(2)}</div>
+          </div>
+        `).join('');
+        
+        const ur=document.getElementById('upcomingRenewals');
+        ur.innerHTML=data.upcomingRenewals.length===0?'<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-text">未來7天內沒有即將續費的訂閱</div></div>':
+        data.upcomingRenewals.map(s=>`
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-name">${s.name}</div>
+              <div class="list-item-meta">
+                <span><i class="fas fa-clock"></i> ${new Date(s.renewalDate).toLocaleDateString('zh-CN')}</span>
+                <span style="color:#f59e0b;font-weight:600">${s.daysUntilRenewal} 天后</span>
+                ${s.customType?`<span class="list-item-badge">${s.customType}</span>`:''}
+              </div>
+            </div>
+            <div class="list-item-amount">${getSymbol(s.currency)}${(s.amount||0).toFixed(2)}</div>
+          </div>
+        `).join('');
+        
+        const et=document.getElementById('expenseByType');
+        et.innerHTML=data.expenseByType.length===0?'<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-text">暫無支出資料</div></div>':
+        data.expenseByType.map((item,i)=>`
+          <div class="ranking-item">
+            <div class="ranking-item-header">
+              <div class="ranking-item-name">${item.type}</div>
+              <div class="ranking-item-value">
+                <span class="ranking-item-amount">¥${item.amount.toFixed(2)}</span>
+                <span class="ranking-item-percentage">${item.percentage}%</span>
+              </div>
+            </div>
+            <div class="ranking-progress">
+              <div class="ranking-progress-bar color-${(i%5)+1}" style="width:${item.percentage}%"></div>
+            </div>
+          </div>
+        `).join('');
+        
+        const ec=document.getElementById('expenseByCategory');
+        ec.innerHTML=data.expenseByCategory.length===0?'<div class="empty-state"><div class="empty-state-icon">📂</div><div class="empty-state-text">暫無支出資料</div></div>':
+        data.expenseByCategory.map((item,i)=>`
+          <div class="ranking-item">
+            <div class="ranking-item-header">
+              <div class="ranking-item-name">${item.category}</div>
+              <div class="ranking-item-value">
+                <span class="ranking-item-amount">¥${item.amount.toFixed(2)}</span>
+                <span class="ranking-item-percentage">${item.percentage}%</span>
+              </div>
+            </div>
+            <div class="ranking-progress">
+              <div class="ranking-progress-bar color-${(i%5)+1}" style="width:${item.percentage}%"></div>
+            </div>
+          </div>
+        `).join('');
+      } catch(e){
+        console.error('載入儀表盤資料失敗:',e);
+        document.getElementById('statsGrid').innerHTML='<div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-text">載入失敗:'+e.message+'</div></div>';
+      }
+    }
+    
+    // 初始化時間顯示和資料載入
+    showSystemTime();
+    loadDashboardData();
+    setInterval(loadDashboardData, 60000);
+
+    // --- 移動端選單控制指令碼 ---
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    if (mobileMenuBtn && mobileMenu) {
+      const syncMobileMenuState = () => {
+        const icon = mobileMenuBtn.querySelector('i');
+        const isHidden = mobileMenu.classList.contains('hidden');
+        mobileMenuBtn.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+        if (icon) {
+          icon.classList.toggle('fa-bars', isHidden);
+          icon.classList.toggle('fa-times', !isHidden);
+        }
+      };
+
+      mobileMenuBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+        syncMobileMenuState();
+      });
+
+      mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.add('hidden');
+          syncMobileMenuState();
+        });
+      });
+
+      document.addEventListener('click', (event) => {
+        if (mobileMenu.classList.contains('hidden')) return;
+        if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+          mobileMenu.classList.add('hidden');
+          syncMobileMenuState();
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
+          mobileMenu.classList.add('hidden');
+          syncMobileMenuState();
+        }
+      });
+
+      syncMobileMenuState();
+    }
+  </script>
+</body>
+</html>
