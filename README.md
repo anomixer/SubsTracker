@@ -71,7 +71,7 @@
 請先將專案下載到本地：
 
 ```bash
-git clone https://github.com/wangwangit/SubsTracker.git
+git clone https://github.com/anomixer/SubsTracker.git
 cd SubsTracker
 ```
 

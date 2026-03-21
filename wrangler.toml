@@ -1,4 +1,4 @@
-name = "subscription-manager"
+name = "substracker"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
@@ -12,6 +12,16 @@ name = "subscription-manager-staging"
 # KV 命名空間配置（預設模板不預設固定 ID，執行 npm run setup 自動生成）
 
 # 定時任務配置 - 每小時檢查一次（UTC）
+
+
+
+
+# KV 命名空間配置（自動生成）
+[[kv_namespaces]]
+binding = "SUBSCRIPTIONS_KV"
+id = "09d0b949a81a459cb1be4e54b6813b4f"
+preview_id = "bff2eb01fe2c4482ba34b1cc236a483e"
+
 [triggers]
 crons = ["0 * * * *"]
 
