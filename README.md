@@ -1,4 +1,4 @@
-﻿# SubsTracker - 訂閱管理與提醒系統
+# SubsTracker - 訂閱管理與提醒系統
 
 基於 Cloudflare Workers 的輕量級訂閱管理系統，幫助你輕鬆跟蹤各類訂閱服務的到期時間，並透過 Telegram、Webhook 等多渠道傳送及時提醒。
 
@@ -29,6 +29,8 @@
 - **企業微信機器人**：支援企業微信群機器人通知
 - **郵件通知**：基於 Resend 的郵件服務
 - **Bark**：支援 iOS Bark 推送
+- **Server醬**：支援 Server醬 3 推送
+- **PushPlus**：支援 PushPlus 推送
 
 ### 🌙 農曆功能
 - **農曆轉換**：支援 1900-2100 年農曆轉換
@@ -167,6 +169,9 @@ npx wrangler kv key get --binding=SUBSCRIPTIONS_KV --env="" --remote subscriptio
 
 首次登入後請立即在系統配置中修改賬號密碼。
 
+## 忘记密码
+请前往CloudFlare的KV管理页面,修改KV SUBSCRIPTIONS_KV 下面的config中的内容即可!
+
 ---
 
 ## 🔧 通知渠道配置
@@ -190,6 +195,15 @@ npx wrangler kv key get --binding=SUBSCRIPTIONS_KV --env="" --remote subscriptio
 - **伺服器地址**：預設 `https://api.day.app`，也可用自建伺服器
 - **裝置 Key**：在 Bark App 內複製
 - **歷史記錄**：勾選“儲存推送”後可保留推送歷史
+
+### Server醬
+- **SendKey**：從 [Server醬官網](https://sct.ftqq.com/) 獲取
+- 使用 Server醬 3 介面傳送 Markdown 格式通知
+
+### PushPlus
+- **Token**：從 [PushPlus 官網](https://www.pushplus.plus/) 獲取
+- **Topic**：可選，配置後可傳送到指定群組
+- **Channel**：可選，可在系統配置中選擇預設、微信公眾號、郵件、簡訊或 Webhook 渠道
 
 ### 郵件通知 (Resend)
 - **API Key**: 從 [Resend 官方教程](https://developers.cloudflare.com/workers/tutorials/send-emails-with-resend/) 獲取

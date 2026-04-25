@@ -40,7 +40,13 @@ async function testSingleSubscriptionNotification(id, env) {
 
     const calendarType = subscription.useLunar ? '農曆' : '公曆';
     const autoRenewText = subscription.autoRenew ? '是' : '否';
-    const amountText = subscription.amount ? `\n金額: ¥${subscription.amount.toFixed(2)}/週期` : '';
+    const currencySymbols = {
+      CNY: '¥', USD: '$', HKD: 'HK$', TWD: 'NT$',
+      JPY: '¥', EUR: '€', GBP: '£', KRW: '₩', TRY: '₺'
+    };
+    const amountConfigured = subscription.amount !== null && subscription.amount !== undefined && !Number.isNaN(Number(subscription.amount));
+    const amountCurrency = currencySymbols[subscription.currency || 'CNY'] || '¥';
+    const amountText = amountConfigured ? `\n金額: ${amountCurrency}${Number(subscription.amount).toFixed(2)}/週期` : '';
 
     const categoryText = subscription.category ? subscription.category : '未分類';
 
