@@ -1,31 +1,54 @@
-async function sendServerChanNotification(title, content, config) {
-  try {
-    if (!config.SERVERCHAN_SENDKEY) {
-      console.error('[Server醬] 通知未配置，缺少 SendKey');
-      return false;
-    }
+// @ts-check
+/**
+ * Server醬 3 通知渠道
+ */
+import { ok, fail, errorMessage } from './channel.js';
 
-    console.log('[Server醬] 開始傳送通知: ' + title);
+/** @type {import('./channel.js').Channel} */
+export const serverChanChannel = {
+  name: 'serverchan',
 
-    const endpoint = 'https://sctapi.ftqq.com/' + config.SERVERCHAN_SENDKEY + '.send';
+  validateConfig(config) {
+    if (!config.SERVERCHAN_SENDKEY) return { ok: false, error: '缺少 SERVERCHAN_SENDKEY' };
+    return { ok: true };
+  },
+
+  async send(payload, config) {
+    const v = serverChanChannel.validateConfig(config);
+    if (!v.ok) return fail('serverchan', v.error || '配置無效');
+
+    const endpoint = `https://sctapi.ftqq.com/${config.SERVERCHAN_SENDKEY}.send`;
     const body = new URLSearchParams({
-      title,
-      desp: `## ${title}\n\n${content}`
+      title: payload.title || '訂閱提醒',
+      desp: `## ${payload.title || '訂閱提醒'}\n\n${payload.content || ''}`
     });
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString()
-    });
+    try {
+      const r = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+      });
+      const result = await r.json().catch(() => ({}));
+      return result && result.code === 0
+        ? ok('serverchan', result)
+        : fail('serverchan', `Server醬返回 code=${result?.code} ${result?.message || ''}`, result);
+    } catch (err) {
+      return fail('serverchan', errorMessage(err));
+    }
+  },
 
-    const result = await response.json();
-    console.log('[Server醬] 傳送結果:', result);
-    return result.code === 0;
-  } catch (error) {
-    console.error('[Server醬] 傳送通知失敗:', error);
-    return false;
+  async test(config) {
+    return serverChanChannel.send(
+      { title: '訂閱管理 - 測試通知', content: '這是一條 Server醬 測試通知。' },
+      config
+    );
   }
-}
+};
 
-export { sendServerChanNotification };
+/** @deprecated 舊版相容函數 */
+export async function sendServerChanNotification(title, content, config) {
+  const r = await serverChanChannel.send({ title, content }, config);
+  if (!r.success) console.error('[Server醬]', r.error);
+  return r.success;
+}

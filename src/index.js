@@ -1,45 +1,40 @@
-import { handleApiRequest } from './api/router.js';
-import { handleAdminRequest, handleLoginPage } from './api/admin.js';
-import { handleDebug } from './api/debug.js';
-import { getCurrentTimeInTimezone } from './core/time.js';
+// @ts-check
+/**
+ * Worker 入口點
+ *
+ * fetch handler 委託給 Hono 應用（src/app.js）。
+ * scheduled handler 觸發定時任務執行。
+ *
+ */
+
+import app from './app.js';
+import { ensureMigrations } from './data/migrate.js';
 import { checkExpiringSubscriptions } from './services/scheduler.js';
-import { getUserFromRequest } from './api/handlers/auth.js';
 
 export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
+  fetch: app.fetch,
 
-    if (url.pathname === '/') {
-      const { user } = await getUserFromRequest(request, env);
-      if (user) {
-        return new Response('', {
-          status: 302,
-          headers: { Location: '/admin' }
-        });
-      }
-      return handleLoginPage();
-    } else if (url.pathname === '/debug') {
-      // 除錯頁必須登入後才能訪問，避免洩露系統資訊
-      const { user } = await getUserFromRequest(request, env);
-      if (!user) {
-        return new Response('未授權訪問', {
-          status: 401,
-          headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-        });
-      }
-      return handleDebug(request, env);
-    } else if (url.pathname.startsWith('/api')) {
-      return handleApiRequest(request, env);
-    } else if (url.pathname.startsWith('/admin')) {
-      return handleAdminRequest(request, env, ctx);
-    } else {
-      return handleLoginPage();
-    }
-  },
-
+  /**
+   * 每小時由 Cron 觸發一次。
+   *
+   * @param {ScheduledEvent} event
+   * @param {{ SUBSCRIPTIONS_KV: KVNamespace }} env
+   * @param {ExecutionContext} ctx
+   */
   async scheduled(event, env, ctx) {
-    const currentTime = getCurrentTimeInTimezone('UTC');
-    console.log('[Workers] 定時任務觸發', 'cron:', event?.cron || '(unknown)', 'UTC:', new Date().toISOString(), 'runtime:', currentTime.toISOString());
+    void ctx;
+    try {
+      await ensureMigrations(env);
+    } catch (err) {
+      console.error('[index] scheduled 遷移失敗:', err);
+    }
+    console.log(
+      '[Workers] 定時任務觸發',
+      'cron:',
+      event?.cron || '(unknown)',
+      'UTC:',
+      new Date().toISOString()
+    );
     await checkExpiringSubscriptions(env);
   }
 };

@@ -1,30 +1,57 @@
-async function sendNotifyXNotification(title, content, description, config) {
-  try {
-    if (!config.NOTIFYX_API_KEY) {
-      console.error('[NotifyX] 通知未配置，缺少API Key');
-      return false;
-    }
+// @ts-check
+/**
+ * NotifyX 通知渠道（https://www.notifyx.cn）
+ */
+import { ok, fail, errorMessage } from './channel.js';
 
-    console.log('[NotifyX] 開始傳送通知: ' + title);
+/** @type {import('./channel.js').Channel} */
+export const notifyxChannel = {
+  name: 'notifyx',
 
-    const url = 'https://www.notifyx.cn/api/v1/send/' + config.NOTIFYX_API_KEY;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: title,
-        content: content,
-        description: description || ''
-      })
+  validateConfig(config) {
+    if (!config.NOTIFYX_API_KEY) return { ok: false, error: '缺少 NOTIFYX_API_KEY' };
+    return { ok: true };
+  },
+
+  async send(payload, config) {
+    const v = notifyxChannel.validateConfig(config);
+    if (!v.ok) return fail('notifyx', v.error || '配置無效');
+
+    const url = `https://www.notifyx.cn/api/v1/send/${config.NOTIFYX_API_KEY}`;
+    const body = JSON.stringify({
+      title: payload.title || '訂閱提醒',
+      content: `## ${payload.title || '訂閱提醒'}\n\n${payload.content || ''}`,
+      description: '訂閱提醒'
     });
 
-    const result = await response.json();
-    console.log('[NotifyX] 傳送結果:', result);
-    return result.status === 'queued';
-  } catch (error) {
-    console.error('[NotifyX] 傳送通知失敗:', error);
-    return false;
-  }
-}
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      });
+      const result = await r.json();
+      return result.status === 'queued'
+        ? ok('notifyx', result)
+        : fail('notifyx', `NotifyX 返回 ${result.status || 'unknown'}`, result);
+    } catch (err) {
+      return fail('notifyx', errorMessage(err));
+    }
+  },
 
-export { sendNotifyXNotification };
+  async test(config) {
+    return notifyxChannel.send(
+      { title: '訂閱管理 - 測試通知', content: '這是一條 NotifyX 測試通知。' },
+      config
+    );
+  }
+};
+
+/** @deprecated 舊版相容函數 */
+export async function sendNotifyXNotification(title, content, _description, config) {
+  // 早期介面簽名帶一個 description 參數；新介面已棄用此欄位
+  void _description;
+  const r = await notifyxChannel.send({ title, content }, config);
+  if (!r.success) console.error('[NotifyX]', r.error);
+  return r.success;
+}

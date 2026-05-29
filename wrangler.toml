@@ -1,6 +1,6 @@
 name = "substracker"
 main = "src/index.js"
-compatibility_date = "2024-01-01"
+compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 [env.production]
@@ -22,6 +22,14 @@ binding = "SUBSCRIPTIONS_KV"
 id = "09d0b949a81a459cb1be4e54b6813b4f"
 preview_id = "bff2eb01fe2c4482ba34b1cc236a483e"
 
+# 靜態資源：託管 public/ 目錄下的 JS/CSS/HTML 給瀏覽器
+# 使用方式：瀏覽器訪問 /js/lib/api-client.js 等同於 public/js/lib/api-client.js
+# 未命中靜態資源的請求由 Worker fetch handler 處理（預設行為）
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# 定時任務配置 - 每小時檢查一次（UTC）
 [triggers]
 crons = ["0 * * * *"]
 

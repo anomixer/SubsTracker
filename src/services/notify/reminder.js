@@ -1,5 +1,6 @@
 import { formatTimeInTimezone, formatTimezoneDisplay } from '../../core/time.js';
 import { lunarCalendar } from '../../core/lunar.js';
+import { formatAmount } from '../../core/currency-format.js';
 
 function resolveReminderSetting(subscription) {
   const defaultDays = subscription && subscription.reminderDays !== undefined ? Number(subscription.reminderDays) : 7;
@@ -77,7 +78,7 @@ function formatNotificationContent(subscriptions, config) {
       statusText = `已過期 ${Math.abs(sub.daysRemaining)} 天`;
     } else {
       statusEmoji = '📅';
-      statusText = `將在 ${sub.daysRemaining} 天后到期`;
+      statusText = `將在 ${sub.daysRemaining} 天後到期`;
     }
 
     const reminderSuffix = reminderSetting.value === 0
@@ -89,18 +90,13 @@ function formatNotificationContent(subscriptions, config) {
 
     const calendarType = sub.useLunar ? '農曆' : '公曆';
     const autoRenewText = sub.autoRenew ? '是' : '否';
-    const currencySymbols = {
-      CNY: '¥', USD: '$', HKD: 'HK$', TWD: 'NT$',
-      JPY: '¥', EUR: '€', GBP: '£', KRW: '₩', TRY: '₺'
-    };
-    const amountConfigured = sub.amount !== null && sub.amount !== undefined && !Number.isNaN(Number(sub.amount));
-    const amountCurrency = currencySymbols[sub.currency || 'CNY'] || '¥';
-    const amountText = amountConfigured ? `\n金額: ${amountCurrency}${Number(sub.amount).toFixed(2)}/週期` : '';
+    const formattedAmt = formatAmount(sub.amount, sub.currency || 'CNY');
+    const amountText = formattedAmt ? `\n金額: ${formattedAmt}/週期` : '';
 
     const subscriptionContent = `${statusEmoji} **${sub.name}**
-型別: ${typeText} ${periodText}
+類型: ${typeText} ${periodText}
 分類: ${categoryText}${amountText}
-日曆型別: ${calendarType}
+日曆類型: ${calendarType}
 到期日期: ${formattedExpiryDate}${lunarExpiryText}
 自動續期: ${autoRenewText}
 ${reminderText}

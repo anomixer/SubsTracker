@@ -1,104 +1,138 @@
-import { formatTimeInTimezone } from '../../core/time.js';
+// @ts-check
+/**
+ * Webhook 通知渠道
+ *
+ * 支持自定義請求方法、Header、消息模板（{{title}} / {{content}} / {{tags}} 等）。
+ */
+import { ok, fail, errorMessage } from './channel.js';
+import { formatLocalDate } from '../../core/time.js';
 
-async function sendWebhookNotification(title, content, config, metadata = {}) {
-  try {
-    if (!config.WEBHOOK_URL) {
-      console.error('[Webhook通知] 通知未配置，缺少URL');
-      return false;
+/**
+ * 把 value 轉成可嵌入 JSON 字串的安全片段。
+ *
+ * @param {any} value
+ */
+function escapeForJsonString(value) {
+  if (value === null || value === undefined) return '';
+  return JSON.stringify(String(value)).slice(1, -1);
+}
+
+/**
+ * @param {any} template
+ * @param {Record<string,any>} data
+ */
+function applyTemplate(template, data) {
+  const templateString = JSON.stringify(template);
+  const replaced = templateString.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      return escapeForJsonString(data[key]);
     }
+    return '';
+  });
+  return JSON.parse(replaced);
+}
 
-    console.log('[Webhook通知] 開始傳送通知到: ' + config.WEBHOOK_URL);
+/**
+ * 構造可供模板替換的變數集合。
+ *
+ * @param {import('./channel.js').ChannelPayload} payload
+ * @param {any} config
+ */
+function buildTemplateData(payload, config) {
+  const tagsArray = Array.isArray(payload.metadata?.tags)
+    ? payload.metadata.tags
+        .filter((t) => typeof t === 'string' && t.trim().length > 0)
+        .map((t) => t.trim())
+    : [];
+  const tagsBlock = tagsArray.length ? tagsArray.map((t) => `- ${t}`).join('\n') : '';
+  const tagsLine = tagsArray.length ? '標籤：' + tagsArray.join('、') : '';
+  const timestamp = formatLocalDate(new Date(), config?.TIMEZONE || 'UTC', 'datetime');
+  const formattedMessage = [
+    payload.title,
+    payload.content,
+    tagsLine,
+    `傳送時間：${timestamp}`
+  ]
+    .filter((s) => s && s.trim().length > 0)
+    .join('\n\n');
 
-    let requestBody;
+  return {
+    title: payload.title,
+    content: payload.content,
+    tags: tagsBlock,
+    tagsLine,
+    rawTags: tagsArray,
+    timestamp,
+    formattedMessage,
+    message: formattedMessage,
+    // 擴充欄位，便於規則化模板
+    daysRemaining: payload.metadata?.daysRemaining ?? '',
+    ruleType: payload.metadata?.ruleType ?? '',
+    ruleValue: payload.metadata?.ruleValue ?? ''
+  };
+}
+
+/** @type {import('./channel.js').Channel} */
+export const webhookChannel = {
+  name: 'webhook',
+
+  validateConfig(config) {
+    if (!config.WEBHOOK_URL) return { ok: false, error: '缺少 WEBHOOK_URL' };
+    return { ok: true };
+  },
+
+  async send(payload, config) {
+    const v = webhookChannel.validateConfig(config);
+    if (!v.ok) return fail('webhook', v.error || '配置無效');
+
     let headers = { 'Content-Type': 'application/json' };
-
     if (config.WEBHOOK_HEADERS) {
       try {
         const customHeaders = JSON.parse(config.WEBHOOK_HEADERS);
         headers = { ...headers, ...customHeaders };
-      } catch (error) {
-        console.warn('[Webhook通知] 自定義請求頭格式錯誤，使用預設請求頭');
+      } catch {
+        console.warn('[Webhook] 自定義請求頭格式錯誤，使用預設請求頭');
       }
     }
 
-    const tagsArray = Array.isArray(metadata.tags)
-      ? metadata.tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0).map(tag => tag.trim())
-      : [];
-    const tagsBlock = tagsArray.length ? tagsArray.map(tag => `- ${tag}`).join('\n') : '';
-    const tagsLine = tagsArray.length ? '標籤：' + tagsArray.join('、') : '';
-    const timestamp = formatTimeInTimezone(new Date(), config?.TIMEZONE || 'UTC', 'datetime');
-    const formattedMessage = [title, content, tagsLine, `傳送時間：${timestamp}`]
-      .filter(section => section && section.trim().length > 0)
-      .join('\n\n');
-
-    const templateData = {
-      title,
-      content,
-      tags: tagsBlock,
-      tagsLine,
-      rawTags: tagsArray,
-      timestamp,
-      formattedMessage,
-      message: formattedMessage
-    };
-
-    const escapeForJson = (value) => {
-      if (value === null || value === undefined) {
-        return '';
-      }
-      return JSON.stringify(String(value)).slice(1, -1);
-    };
-
-    const applyTemplate = (template, data) => {
-      const templateString = JSON.stringify(template);
-      const replaced = templateString.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
-        if (Object.prototype.hasOwnProperty.call(data, key)) {
-          return escapeForJson(data[key]);
-        }
-        return '';
-      });
-      return JSON.parse(replaced);
-    };
-
+    const data = buildTemplateData(payload, config);
+    let requestBody;
     if (config.WEBHOOK_TEMPLATE) {
       try {
         const template = JSON.parse(config.WEBHOOK_TEMPLATE);
-        requestBody = applyTemplate(template, templateData);
-      } catch (error) {
-        console.warn('[Webhook通知] 訊息模板格式錯誤，使用預設格式');
-        requestBody = {
-          title,
-          content,
-          tags: tagsArray,
-          tagsLine,
-          timestamp,
-          message: formattedMessage
-        };
+        requestBody = applyTemplate(template, data);
+      } catch {
+        console.warn('[Webhook] 訊息模板格式錯誤，使用預設格式');
+        requestBody = { ...data };
       }
     } else {
-      requestBody = {
-        title,
-        content,
-        tags: tagsArray,
-        tagsLine,
-        timestamp,
-        message: formattedMessage
-      };
+      requestBody = { ...data };
     }
 
-    const response = await fetch(config.WEBHOOK_URL, {
-      method: config.WEBHOOK_METHOD || 'POST',
-      headers: headers,
-      body: JSON.stringify(requestBody)
-    });
+    try {
+      const r = await fetch(config.WEBHOOK_URL, {
+        method: config.WEBHOOK_METHOD || 'POST',
+        headers,
+        body: JSON.stringify(requestBody)
+      });
+      const text = await r.text().catch(() => '');
+      return r.ok ? ok('webhook', text) : fail('webhook', `HTTP ${r.status}`, text);
+    } catch (err) {
+      return fail('webhook', errorMessage(err));
+    }
+  },
 
-    const result = await response.text();
-    console.log('[Webhook通知] 傳送結果:', response.status, result);
-    return response.ok;
-  } catch (error) {
-    console.error('[Webhook通知] 傳送通知失敗:', error);
-    return false;
+  async test(config) {
+    return webhookChannel.send(
+      { title: '訂閱管理 - 測試通知', content: '這是一條 Webhook 測試通知。' },
+      config
+    );
   }
-}
+};
 
-export { sendWebhookNotification };
+/** @deprecated 舊版相容函數 */
+export async function sendWebhookNotification(title, content, config, metadata = {}) {
+  const r = await webhookChannel.send({ title, content, metadata }, config);
+  if (!r.success) console.error('[Webhook]', r.error);
+  return r.success;
+}

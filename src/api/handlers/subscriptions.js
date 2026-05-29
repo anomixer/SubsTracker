@@ -13,6 +13,7 @@ import { getConfig } from '../../data/config.js';
 import { sendNotificationToAllChannels } from '../../services/notify/index.js';
 import { lunarCalendar } from '../../core/lunar.js';
 import { formatTimeInTimezone, formatTimezoneDisplay } from '../../core/time.js';
+import { formatAmount } from '../../core/currency-format.js';
 import { extractTagsFromSubscriptions } from '../utils.js';
 
 async function testSingleSubscriptionNotification(id, env) {
@@ -40,13 +41,8 @@ async function testSingleSubscriptionNotification(id, env) {
 
     const calendarType = subscription.useLunar ? '農曆' : '公曆';
     const autoRenewText = subscription.autoRenew ? '是' : '否';
-    const currencySymbols = {
-      CNY: '¥', USD: '$', HKD: 'HK$', TWD: 'NT$',
-      JPY: '¥', EUR: '€', GBP: '£', KRW: '₩', TRY: '₺'
-    };
-    const amountConfigured = subscription.amount !== null && subscription.amount !== undefined && !Number.isNaN(Number(subscription.amount));
-    const amountCurrency = currencySymbols[subscription.currency || 'CNY'] || '¥';
-    const amountText = amountConfigured ? `\n金額: ${amountCurrency}${Number(subscription.amount).toFixed(2)}/週期` : '';
+    const formattedAmount = formatAmount(subscription.amount, subscription.currency || 'CNY');
+    const amountText = formattedAmount ? `\n金額: ${formattedAmount}/週期` : '';
 
     const categoryText = subscription.category ? subscription.category : '未分類';
 
@@ -62,6 +58,7 @@ async function testSingleSubscriptionNotification(id, env) {
 
     const tags = extractTagsFromSubscriptions([subscription]);
     const notifyResult = await sendNotificationToAllChannels(title, commonContent, config, '[手動測試]', {
+      env, subId: id, ruleId: 'manual-test',
       metadata: { tags }
     });
 
@@ -70,7 +67,7 @@ async function testSingleSubscriptionNotification(id, env) {
     const failedCount = notifyResult?.failedCount || 0;
 
     if (attempted === 0) {
-      return { success: false, message: '未啟用任何通知渠道，請先在系統配置中開啟至少一種通知方式' };
+      return { success: false, message: '未啟用 any 通知渠道，請先在系統配置中開啟至少一種通知方式' };
     }
 
     if (successCount === 0) {
@@ -100,6 +97,21 @@ async function handleSubscriptions(request, env, path) {
     if (method === 'POST') {
       const subscription = await request.json();
       const result = await createSubscription(subscription, env);
+      // 本次：建立成功後寫入提醒規則
+      if (result.success && result.subscription) {
+        try {
+          const remindersRepo = await import('../../data/reminders.repo.js');
+          const incoming = Array.isArray(subscription.reminderRules)
+            ? subscription.reminderRules
+            : null;
+          const rules = incoming && incoming.length > 0
+            ? incoming.map(remindersRepo.normalizeRule)
+            : remindersRepo.defaultPresetRules();
+          await remindersRepo.replaceForSubscription(env, result.subscription.id, rules);
+        } catch (err) {
+          console.error('[subscriptions] 寫入提醒規則失敗（訂閱本身已建立）:', err);
+        }
+      }
       return new Response(JSON.stringify(result), {
         status: result.success ? 201 : 400,
         headers: { 'Content-Type': 'application/json' }

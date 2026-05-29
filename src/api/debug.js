@@ -1,59 +1,139 @@
+// @ts-check
+/**
+ * 除錯頁（僅登入後可見）
+ *
+ * 用途：
+ * - 檢查 KV 綁定、配置完整性、JWT 金鑰狀態
+ * - 新增"時區診斷"區塊，直觀展示 UTC vs 使用者 TZ 的目前小時差異
+ *   這是 #91 / #52 / #166 類問題的自助排查入口
+ *
+ */
 import { getConfig } from '../data/config.js';
+import {
+  getNowInTimezone,
+  formatTimezoneDisplay,
+  getTimezoneOffset
+} from '../core/time.js';
+import * as schedLogs from '../data/scheduler-logs.repo.js';
 
+/** 簡單 HTML 轉義，防止配置中的字串污染頁面 */
+function esc(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * @param {Request} request
+ * @param {{ SUBSCRIPTIONS_KV: KVNamespace }} env
+ */
 async function handleDebug(request, env) {
   try {
     const url = new URL(request.url);
+
+    // 子路由：匯出最近 N 條排程日誌（JSON）
+    if (url.searchParams.get('export') === 'sched_logs') {
+      const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit') || 50)));
+      const logs = await schedLogs.getRecent(env, limit);
+      return new Response(JSON.stringify(logs, null, 2), {
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Content-Disposition': `attachment; filename="scheduler-logs-${Date.now()}.json"`
+        }
+      });
+    }
+
     const config = await getConfig(env);
+    const tz = config.TIMEZONE || 'UTC';
+    const now = getNowInTimezone(tz);
+
+    const notificationHours = Array.isArray(config.NOTIFICATION_HOURS)
+      ? config.NOTIFICATION_HOURS.map((h) => String(h).padStart(2, '0'))
+      : [];
+    const inWindow =
+      notificationHours.length === 0 ||
+      notificationHours.includes('*') ||
+      notificationHours.includes('ALL') ||
+      notificationHours.includes(now.hourString);
+
     const debugInfo = {
-      timestamp: new Date().toISOString(),
+      timestamp: now.utc.toISOString(),
       pathname: url.pathname,
       kvBinding: !!env.SUBSCRIPTIONS_KV,
       configExists: !!config,
       adminUsername: config.ADMIN_USERNAME,
       hasJwtSecret: !!config.JWT_SECRET,
-      jwtSecretLength: config.JWT_SECRET ? config.JWT_SECRET.length : 0
+      jwtSecretLength: config.JWT_SECRET ? config.JWT_SECRET.length : 0,
+      timezone: tz,
+      timezoneDisplay: formatTimezoneDisplay(tz),
+      timezoneOffsetHours: getTimezoneOffset(tz),
+      utcIso: now.utc.toISOString(),
+      localIso: now.isoLocal,
+      currentHour: now.hourString,
+      configuredHours: notificationHours,
+      inNotificationWindow: inWindow
     };
 
-    return new Response(`
-<!DOCTYPE html>
-<html>
+    return new Response(
+      `<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-  <title>除錯資訊</title>
+  <meta charset="UTF-8" />
+  <title>除錯資訊 - SubsTracker</title>
   <style>
-    body { font-family: monospace; padding: 20px; background: #f5f5f5; }
-    .info { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
-    .success { color: green; }
-    .error { color: red; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace; padding: 20px; background: #f5f5f5; color: #333; }
+    h1 { font-size: 22px; }
+    .info { background: white; padding: 15px 20px; margin: 12px 0; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .info h3 { margin-top: 0; font-size: 16px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+    .row .k { color: #666; }
+    .row .v { font-weight: 600; color: #1a1a1a; }
+    .success { color: #16a34a; }
+    .error { color: #dc2626; }
+    .warn { color: #ca8a04; }
+    code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
   </style>
 </head>
 <body>
   <h1>系統除錯資訊</h1>
+
   <div class="info">
     <h3>基本資訊</h3>
-    <p>時間: ${debugInfo.timestamp}</p>
-    <p>路徑: ${debugInfo.pathname}</p>
-    <p class="${debugInfo.kvBinding ? 'success' : 'error'}">KV繫結: ${debugInfo.kvBinding ? '✓' : '✗'}</p>
+    <div class="row"><span class="k">UTC 時間</span><span class="v">${esc(debugInfo.timestamp)}</span></div>
+    <div class="row"><span class="k">存取路徑</span><span class="v">${esc(debugInfo.pathname)}</span></div>
+    <div class="row"><span class="k">KV 綁定</span><span class="v ${debugInfo.kvBinding ? 'success' : 'error'}">${debugInfo.kvBinding ? '✓ 已綁定' : '✗ 未綁定'}</span></div>
+    <div class="row"><span class="k">配置可讀取</span><span class="v ${debugInfo.configExists ? 'success' : 'error'}">${debugInfo.configExists ? '✓' : '✗'}</span></div>
+    <div class="row"><span class="k">管理員使用者名稱</span><span class="v">${esc(debugInfo.adminUsername || '(未設定)')}</span></div>
+    <div class="row"><span class="k">JWT 金鑰</span><span class="v ${debugInfo.hasJwtSecret ? 'success' : 'error'}">${debugInfo.hasJwtSecret ? `✓ 已設定 (${debugInfo.jwtSecretLength} 字元)` : '✗ 缺失'}</span></div>
   </div>
 
   <div class="info">
-    <h3>配置資訊</h3>
-    <p class="${debugInfo.configExists ? 'success' : 'error'}">配置存在: ${debugInfo.configExists ? '✓' : '✗'}</p>
-    <p>管理員使用者名稱: ${debugInfo.adminUsername}</p>
-    <p class="${debugInfo.hasJwtSecret ? 'success' : 'error'}">JWT金鑰: ${debugInfo.hasJwtSecret ? '✓' : '✗'} (長度: ${debugInfo.jwtSecretLength})</p>
+    <h3>時區診斷</h3>
+    <div class="row"><span class="k">配置的時區</span><span class="v">${esc(debugInfo.timezoneDisplay)}</span></div>
+    <div class="row"><span class="k">時區偏移</span><span class="v">UTC${debugInfo.timezoneOffsetHours >= 0 ? '+' : ''}${debugInfo.timezoneOffsetHours} 小時</span></div>
+    <div class="row"><span class="k">目前 UTC</span><span class="v">${esc(debugInfo.utcIso)}</span></div>
+    <div class="row"><span class="k">目前使用者本地時間</span><span class="v">${esc(debugInfo.localIso)}</span></div>
+    <div class="row"><span class="k">用於通知時段判斷的小時</span><span class="v">${esc(debugInfo.currentHour)}</span></div>
+    <div class="row"><span class="k">配置的通知小時（使用者 TZ）</span><span class="v">${notificationHours.length === 0 ? '<em class="warn">空（預設全天傳送）</em>' : `<code>${esc(notificationHours.join(', '))}</code>`}</span></div>
+    <div class="row"><span class="k">現在是否允許傳送</span><span class="v ${debugInfo.inNotificationWindow ? 'success' : 'warn'}">${debugInfo.inNotificationWindow ? '✓ 在時段內' : '✗ 不在時段內'}</span></div>
   </div>
 
   <div class="info">
-    <h3>解決方案</h3>
-    <p>1. 確保KV名稱空間已正確繫結為 SUBSCRIPTIONS_KV</p>
-    <p>2. 嘗試訪問 <a href="/">/</a> 進行登入</p>
-    <p>3. 如果仍有問題，請檢查Cloudflare Workers日誌</p>
+    <h3>解決方案與提示</h3>
+    <p>1. 如果時區診斷中「目前小時」與您預期不符，請檢查系統設定中的 <code>TIMEZONE</code> 是否與您所在地相符。</p>
+    <p>2. 此版本 <code>NOTIFICATION_HOURS</code> <strong>按您配置的時區</strong>解釋（不再是 UTC）。例如想讓台北時間 08:00 收到通知，且 <code>TIMEZONE=Asia/Taipei</code> 時，請填寫 <code>08</code>。</p>
+    <p>3. 詳細傳送紀錄請前往管理後台的「通知日誌」頁面。</p>
+    <p>4. <a href="/admin">返回管理後台</a></p>
+    <p>5. <a href="/debug?export=sched_logs&limit=50">📥 匯出最近 50 條排程執行日誌（JSON）</a></p>
   </div>
 </body>
-</html>`, {
-      headers: { 'Content-Type': 'text/html; charset=utf-8' }
-    });
+</html>`,
+      { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
   } catch (error) {
-    return new Response(`除錯頁面錯誤: ${error.message}`, {
+    return new Response(`除錯頁面錯誤: ${error && error.message ? error.message : error}`, {
       status: 500,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
     });

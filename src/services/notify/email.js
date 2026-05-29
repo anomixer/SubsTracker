@@ -1,85 +1,96 @@
-import { formatTimeInTimezone } from '../../core/time.js';
+// @ts-check
+/**
+ * 郵件通知渠道（Resend API）
+ */
+import { ok, fail, errorMessage, stripMarkdown } from './channel.js';
+import { formatLocalDate } from '../../core/time.js';
 
-async function sendEmailNotification(title, content, config) {
-  try {
-    if (!config.RESEND_API_KEY || !config.EMAIL_FROM || !config.EMAIL_TO) {
-      console.error('[郵件通知] 通知未配置，缺少必要引數');
-      return false;
-    }
-
-    console.log('[郵件通知] 開始傳送郵件到: ' + config.EMAIL_TO);
-
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center; }
-        .header h1 { color: white; margin: 0; font-size: 24px; }
-        .content { padding: 30px 20px; }
-        .content h2 { color: #333; margin-top: 0; }
-        .content p { color: #666; line-height: 1.6; margin: 16px 0; }
-        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px; }
-        .highlight { background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0; }
-        .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-    </style>
-</head>
+/**
+ * 構造 HTML 模板。
+ * @param {string} title
+ * @param {string} content
+ * @param {string} timezone
+ */
+function buildHtml(title, content, timezone) {
+  const safe = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] || c));
+  const ts = formatLocalDate(new Date(), timezone || 'UTC', 'datetime');
+  return `<!DOCTYPE html>
+<html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${safe(title)}</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
+.container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+.header { background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px 20px; text-align: center; }
+.header h1 { color: white; margin: 0; font-size: 24px; }
+.content { padding: 30px 20px; }
+.highlight { background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0; }
+.footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px; }
+</style></head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📅 ${title}</h1>
-        </div>
-        <div class="content">
-            <div class="highlight">
-                ${content.replace(/\n/g, '<br>')}
-            </div>
-            <p>此郵件由訂閱管理系統自動傳送，請及時處理相關訂閱事務。</p>
-        </div>
-        <div class="footer">
-            <p>訂閱管理系統 | 傳送時間: ${formatTimeInTimezone(new Date(), config?.TIMEZONE || 'UTC', 'datetime')}</p>
-        </div>
-    </div>
-</body>
-</html>`;
-
-    const fromEmail = config.EMAIL_FROM_NAME ?
-      `${config.EMAIL_FROM_NAME} <${config.EMAIL_FROM}>` :
-      config.EMAIL_FROM;
-
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${config.RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: config.EMAIL_TO,
-        subject: title,
-        html: htmlContent,
-        text: content
-      })
-    });
-
-    const result = await response.json();
-    console.log('[郵件通知] 傳送結果:', response.status, result);
-
-    if (response.ok && result.id) {
-      console.log('[郵件通知] 郵件傳送成功，ID:', result.id);
-      return true;
-    } else {
-      console.error('[郵件通知] 郵件傳送失敗:', result);
-      return false;
-    }
-  } catch (error) {
-    console.error('[郵件通知] 傳送郵件失敗:', error);
-    return false;
-  }
+<div class="container">
+  <div class="header"><h1>📅 ${safe(title)}</h1></div>
+  <div class="content">
+    <div class="highlight">${safe(stripMarkdown(content)).replace(/\n/g, '<br>')}</div>
+    <p style="color:#666;line-height:1.6;">此郵件由訂閱管理系統自動傳送，請及時處理相關訂閱事務。</p>
+  </div>
+  <div class="footer"><p>訂閱管理系統 | 傳送時間: ${safe(ts)}</p></div>
+</div>
+</body></html>`;
 }
 
-export { sendEmailNotification };
+/** @type {import('./channel.js').Channel} */
+export const emailChannel = {
+  name: 'email',
+
+  validateConfig(config) {
+    if (!config.RESEND_API_KEY) return { ok: false, error: '缺少 RESEND_API_KEY' };
+    if (!config.EMAIL_FROM) return { ok: false, error: '缺少 EMAIL_FROM' };
+    if (!config.EMAIL_TO) return { ok: false, error: '缺少 EMAIL_TO' };
+    return { ok: true };
+  },
+
+  async send(payload, config) {
+    const v = emailChannel.validateConfig(config);
+    if (!v.ok) return fail('email', v.error || '配置無效');
+
+    const fromEmail = config.EMAIL_FROM_NAME
+      ? `${config.EMAIL_FROM_NAME} <${config.EMAIL_FROM}>`
+      : config.EMAIL_FROM;
+
+    try {
+      const r = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${config.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: config.EMAIL_TO,
+          subject: payload.title,
+          html: buildHtml(payload.title, payload.content, config.TIMEZONE),
+          text: stripMarkdown(payload.content)
+        })
+      });
+      const result = await r.json().catch(() => ({}));
+      return r.ok && result && result.id
+        ? ok('email', result)
+        : fail('email', result?.message || `HTTP ${r.status}`, result);
+    } catch (err) {
+      return fail('email', errorMessage(err));
+    }
+  },
+
+  async test(config) {
+    return emailChannel.send(
+      { title: '訂閱管理 - 測試通知', content: '這是一條郵件測試通知。' },
+      config
+    );
+  }
+};
+
+/** @deprecated 舊版相容函數 */
+export async function sendEmailNotification(title, content, config) {
+  const r = await emailChannel.send({ title, content }, config);
+  if (!r.success) console.error('[Email]', r.error);
+  return r.success;
+}

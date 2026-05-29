@@ -1,76 +1,81 @@
-async function sendWechatBotNotification(title, content, config) {
-  try {
-    if (!config.WECHATBOT_WEBHOOK) {
-      console.error('[企業微信機器人] 通知未配置，缺少Webhook URL');
-      return false;
-    }
+// @ts-check
+/**
+ * 企業微信機器人通知渠道
+ *
+ * 支持 text / markdown 兩種消息格式，可配置 @所有人 / @手機號。
+ */
+import { ok, fail, errorMessage, stripMarkdown } from './channel.js';
 
-    console.log('[企業微信機器人] 開始傳送通知到: ' + config.WECHATBOT_WEBHOOK);
+/** @type {import('./channel.js').Channel} */
+export const wecomChannel = {
+  name: 'wechatbot',
 
-    let messageData;
+  validateConfig(config) {
+    if (!config.WECHATBOT_WEBHOOK) return { ok: false, error: '缺少 WECHATBOT_WEBHOOK' };
+    return { ok: true };
+  },
+
+  async send(payload, config) {
+    const v = wecomChannel.validateConfig(config);
+    if (!v.ok) return fail('wechatbot', v.error || '配置無效');
+
     const msgType = config.WECHATBOT_MSG_TYPE || 'text';
+    let messageData;
 
     if (msgType === 'markdown') {
-      const markdownContent = `# ${title}\n\n${content}`;
-      messageData = {
-        msgtype: 'markdown',
-        markdown: { content: markdownContent }
-      };
+      const markdownContent = `# ${payload.title}\n\n${payload.content}`;
+      messageData = { msgtype: 'markdown', markdown: { content: markdownContent } };
     } else {
-      const textContent = `${title}\n\n${content}`;
-      messageData = {
-        msgtype: 'text',
-        text: { content: textContent }
-      };
+      const textContent = `${payload.title}\n\n${stripMarkdown(payload.content)}`;
+      messageData = { msgtype: 'text', text: { content: textContent } };
     }
 
-    if (config.WECHATBOT_AT_ALL === 'true') {
-      if (msgType === 'text') {
-        messageData.text.mentioned_list = ['@all'];
-      }
+    if (config.WECHATBOT_AT_ALL === 'true' && msgType === 'text') {
+      messageData.text.mentioned_list = ['@all'];
     } else if (config.WECHATBOT_AT_MOBILES) {
-      const mobiles = config.WECHATBOT_AT_MOBILES.split(',').map(m => m.trim()).filter(m => m);
-      if (mobiles.length > 0) {
-        if (msgType === 'text') {
-          messageData.text.mentioned_mobile_list = mobiles;
-        }
+      const mobiles = String(config.WECHATBOT_AT_MOBILES)
+        .split(',')
+        .map((m) => m.trim())
+        .filter(Boolean);
+      if (mobiles.length > 0 && msgType === 'text') {
+        messageData.text.mentioned_mobile_list = mobiles;
       }
     }
 
-    console.log('[企業微信機器人] 傳送訊息資料:', JSON.stringify(messageData, null, 2));
+    try {
+      const r = await fetch(config.WECHATBOT_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(messageData)
+      });
+      const text = await r.text();
+      if (!r.ok) return fail('wechatbot', `HTTP ${r.status}`, text);
 
-    const response = await fetch(config.WECHATBOT_WEBHOOK, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(messageData)
-    });
-
-    const responseText = await response.text();
-    console.log('[企業微信機器人] 響應狀態:', response.status);
-    console.log('[企業微信機器人] 響應內容:', responseText);
-
-    if (response.ok) {
+      let result;
       try {
-        const result = JSON.parse(responseText);
-        if (result.errcode === 0) {
-          console.log('[企業微信機器人] 通知傳送成功');
-          return true;
-        } else {
-          console.error('[企業微信機器人] 傳送失敗，錯誤碼:', result.errcode, '錯誤資訊:', result.errmsg);
-          return false;
-        }
-      } catch (parseError) {
-        console.error('[企業微信機器人] 解析響應失敗:', parseError);
-        return false;
+        result = JSON.parse(text);
+      } catch {
+        return fail('wechatbot', '響應非 JSON', text);
       }
-    } else {
-      console.error('[企業微信機器人] HTTP請求失敗，狀態碼:', response.status);
-      return false;
+      return result.errcode === 0
+        ? ok('wechatbot', result)
+        : fail('wechatbot', `企業微信返回 errcode=${result.errcode} ${result.errmsg || ''}`, result);
+    } catch (err) {
+      return fail('wechatbot', errorMessage(err));
     }
-  } catch (error) {
-    console.error('[企業微信機器人] 傳送通知失敗:', error);
-    return false;
-  }
-}
+  },
 
-export { sendWechatBotNotification };
+  async test(config) {
+    return wecomChannel.send(
+      { title: '訂閱管理 - 測試通知', content: '這是一條企業微信測試通知。' },
+      config
+    );
+  }
+};
+
+/** @deprecated 舊版相容函數 */
+export async function sendWechatBotNotification(title, content, config) {
+  const r = await wecomChannel.send({ title, content }, config);
+  if (!r.success) console.error('[企業微信]', r.error);
+  return r.success;
+}
