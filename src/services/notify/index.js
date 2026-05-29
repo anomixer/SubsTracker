@@ -85,14 +85,14 @@ async function sendNotificationToAllChannels(title, commonContent, config, logPr
     const success = await sendServerChanNotification(title, commonContent, config);
     result.channelResults.serverchan = success;
     success ? result.successCount++ : result.failedCount++;
-    console.log(`${logPrefix} 发送Server酱通知 ${success ? '成功' : '失败'}`);
+    console.log(`${logPrefix} 傳送Server醬通知 ${success ? '成功' : '失敗'}`);
   }
   if (enabledNotifiers.includes('pushplus')) {
     result.attempted += 1;
     const success = await sendPushPlusNotification(title, commonContent, config);
     result.channelResults.pushplus = success;
     success ? result.successCount++ : result.failedCount++;
-    console.log(`${logPrefix} 发送PushPlus通知 ${success ? '成功' : '失败'}`);
+    console.log(`${logPrefix} 傳送PushPlus通知 ${success ? '成功' : '失敗'}`);
   }
 
   return result;

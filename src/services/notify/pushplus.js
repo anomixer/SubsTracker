@@ -1,11 +1,11 @@
 async function sendPushPlusNotification(title, content, config) {
   try {
     if (!config.PUSHPLUS_TOKEN) {
-      console.error('[PushPlus] 通知未配置，缺少Token');
+      console.error('[PushPlus] 通知未配置，缺少 Token');
       return false;
     }
 
-    console.log('[PushPlus] 开始发送通知: ' + title);
+    console.log('[PushPlus] 開始傳送通知: ' + title);
 
     const payload = {
       token: config.PUSHPLUS_TOKEN,
@@ -29,10 +29,10 @@ async function sendPushPlusNotification(title, content, config) {
     });
 
     const result = await response.json();
-    console.log('[PushPlus] 发送结果:', result);
+    console.log('[PushPlus] 傳送結果:', result);
     return result.code === 200;
   } catch (error) {
-    console.error('[PushPlus] 发送通知失败:', error);
+    console.error('[PushPlus] 傳送通知失敗:', error);
     return false;
   }
 }

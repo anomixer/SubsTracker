@@ -1,11 +1,11 @@
 async function sendServerChanNotification(title, content, config) {
   try {
     if (!config.SERVERCHAN_SENDKEY) {
-      console.error('[Server酱] 通知未配置，缺少SendKey');
+      console.error('[Server醬] 通知未配置，缺少 SendKey');
       return false;
     }
 
-    console.log('[Server酱] 开始发送通知: ' + title);
+    console.log('[Server醬] 開始傳送通知: ' + title);
 
     const endpoint = 'https://sctapi.ftqq.com/' + config.SERVERCHAN_SENDKEY + '.send';
     const body = new URLSearchParams({
@@ -20,10 +20,10 @@ async function sendServerChanNotification(title, content, config) {
     });
 
     const result = await response.json();
-    console.log('[Server酱] 发送结果:', result);
+    console.log('[Server醬] 傳送結果:', result);
     return result.code === 0;
   } catch (error) {
-    console.error('[Server酱] 发送通知失败:', error);
+    console.error('[Server醬] 傳送通知失敗:', error);
     return false;
   }
 }
