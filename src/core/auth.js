@@ -59,6 +59,14 @@ async function verifyJWT(token, secret) {
     }
 
     const payload = JSON.parse(atob(payloadBase64));
+    // 必須校驗 exp，否則過期 token 仍可長期使用
+    if (payload.exp != null) {
+      const exp = Number(payload.exp);
+      if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) {
+        console.log('[JWT] Token 已過期');
+        return null;
+      }
+    }
     console.log('[JWT] 驗證成功，使用者:', payload.username);
     return payload;
   } catch (error) {

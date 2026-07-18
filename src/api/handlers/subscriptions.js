@@ -12,7 +12,7 @@ import {
 import { getConfig } from '../../data/config.js';
 import { sendNotificationToAllChannels } from '../../services/notify/index.js';
 import { lunarCalendar } from '../../core/lunar.js';
-import { formatTimeInTimezone, formatTimezoneDisplay } from '../../core/time.js';
+import { formatTimeInTimezone, formatTimezoneDisplay, getTimezoneDateParts } from '../../core/time.js';
 import { formatAmount } from '../../core/currency-format.js';
 import { extractTagsFromSubscriptions } from '../utils.js';
 
@@ -30,8 +30,9 @@ async function testSingleSubscriptionNotification(id, env) {
     let lunarExpiryText = '';
 
     if (showLunar) {
-      const expiryDateObj = new Date(subscription.expiryDate);
-      const lunarExpiry = lunarCalendar.solar2lunar(expiryDateObj.getFullYear(), expiryDateObj.getMonth() + 1, expiryDateObj.getDate());
+      const timezoneForLunar = config?.TIMEZONE || 'UTC';
+      const expiryParts = getTimezoneDateParts(subscription.expiryDate, timezoneForLunar);
+      const lunarExpiry = lunarCalendar.solar2lunar(expiryParts.year, expiryParts.month, expiryParts.day);
       lunarExpiryText = lunarExpiry ? ` (農曆: ${lunarExpiry.fullStr})` : '';
     }
 
@@ -95,12 +96,21 @@ async function handleSubscriptions(request, env, path) {
     }
 
     if (method === 'POST') {
-      const subscription = await request.json();
+      let subscription;
+      try {
+        subscription = await request.json();
+      } catch {
+        return new Response(
+          JSON.stringify({ success: false, message: '請求體不是合法的 JSON' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
       const result = await createSubscription(subscription, env);
-      // 本次：建立成功後寫入提醒規則
+      // 建立成功後寫入提醒規則，並同步 legacy 提醒欄位（列表展示相依）
       if (result.success && result.subscription) {
         try {
           const remindersRepo = await import('../../data/reminders.repo.js');
+          const { syncLegacyReminderFields } = await import('../../data/subscriptions.js');
           const incoming = Array.isArray(subscription.reminderRules)
             ? subscription.reminderRules
             : null;
@@ -108,6 +118,7 @@ async function handleSubscriptions(request, env, path) {
             ? incoming.map(remindersRepo.normalizeRule)
             : remindersRepo.defaultPresetRules();
           await remindersRepo.replaceForSubscription(env, result.subscription.id, rules);
+          await syncLegacyReminderFields(env, result.subscription.id, rules);
         } catch (err) {
           console.error('[subscriptions] 寫入提醒規則失敗（訂閱本身已建立）:', err);
         }
@@ -172,12 +183,38 @@ async function handleSubscriptions(request, env, path) {
 
     if (method === 'GET') {
       const subscription = await getSubscription(id, env);
+      if (!subscription) {
+        return new Response(
+          JSON.stringify({ success: false, message: '訂閱不存在' }),
+          { status: 404, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
       return new Response(JSON.stringify(subscription), { headers: { 'Content-Type': 'application/json' } });
     }
 
     if (method === 'PUT') {
-      const subscription = await request.json();
+      let subscription;
+      try {
+        subscription = await request.json();
+      } catch {
+        return new Response(
+          JSON.stringify({ success: false, message: '請求體不是合法的 JSON' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
       const result = await updateSubscription(id, subscription, env);
+      // 与创建路径对称：若 body 带 reminderRules 则整体替换并同步 legacy
+      if (result.success && Array.isArray(subscription.reminderRules)) {
+        try {
+          const remindersRepo = await import('../../data/reminders.repo.js');
+          const { syncLegacyReminderFields } = await import('../../data/subscriptions.js');
+          const rules = subscription.reminderRules.map(remindersRepo.normalizeRule);
+          await remindersRepo.replaceForSubscription(env, id, rules);
+          await syncLegacyReminderFields(env, id, rules);
+        } catch (err) {
+          console.error('[subscriptions] 更新提醒規則失敗（訂閱本體已更新）:', err);
+        }
+      }
       return new Response(JSON.stringify(result), { status: result.success ? 200 : 400, headers: { 'Content-Type': 'application/json' } });
     }
 

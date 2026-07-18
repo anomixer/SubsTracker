@@ -139,6 +139,10 @@
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white rounded-lg shadow-md p-6">
       <h2 class="text-2xl font-bold text-gray-800 mb-6">系統配置</h2>
+      <div id="defaultPasswordBanner" class="hidden mb-4 p-3 rounded-md border border-amber-300 bg-amber-50 text-amber-900 text-sm">
+        <i class="fas fa-exclamation-triangle mr-1"></i>
+        偵測到您可能仍在使用預設管理員密碼。請立即修改下方「管理員密碼」並儲存，以避免公網被接管。
+      </div>
       
       <form id="configForm" class="space-y-8">
         <div class="border-b border-gray-200 pb-6">
@@ -201,46 +205,31 @@
               <option value="Europe/London">英國時間（UTC+0）</option>
               <option value="Europe/Paris">巴黎時間（UTC+1）</option>
               <option value="Europe/Berlin">柏林時間（UTC+1）</option>
-              <option value="Europe/Moscow">莫斯科時間（UTC+3）</option>
-              <option value="Australia/Sydney">悉尼時間（UTC+10）</option>
-              <option value="Australia/Melbourne">墨爾本時間（UTC+10）</option>
-              <option value="Pacific/Auckland">奧克蘭時間（UTC+12）</option>
-            </optgroup>
-          </select>
-            <p class="mt-1 text-sm text-gray-500">所有時間相關的判斷（通知時段、剩餘天數、日期顯示）都按此時區計算。台灣用戶保持預設 <code>Asia/Taipei</code> 即可。</p>
-          </div>
-        </div>
-
-        
-        <div class="border-b border-gray-200 pb-6">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">通知設定</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div>
-<<<<<<< HEAD
-              <label for="notificationHours" class="block text-sm font-medium text-gray-700">通知時段（UTC）</label>
-              <input type="text" id="notificationHours" placeholder="例如：08, 12, 20 或輸入 * 表示全天"
-                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-              <p class="mt-1 text-sm text-gray-500">可輸入多個小時，使用逗號或空格分隔；留空則預設每天執行一次任務即可</p>
-            </div>
-            <div class="bg-indigo-50 border border-indigo-100 rounded-md p-3 text-sm text-indigo-700">
-              <p class="font-medium mb-1">提示</p>
-              <p>後臺統一按 UTC 判斷通知時段。示例：北京時間 08:00 對應 UTC 00，請在此填 <code>00</code>。</p>
-              <p class="mt-1">若 Cron 已設定為每小時執行，可用該欄位限制實際傳送提醒的小時段。</p>
-=======
-              <label for="notificationHours" class="block text-sm font-medium text-gray-700">
-                通知时段
-                <span id="tzLabelInline" class="text-indigo-600 font-semibold">（按你的时区）</span>
+              <option value="Europe/Mosco              <label for="notificationHours" class="block text-sm font-medium text-gray-700">
+                允許傳送的小時
+                <span id="tzLabelInline" class="text-indigo-600 font-semibold">（按下方時區）</span>
               </label>
-              <input type="text" id="notificationHours" placeholder="例如：08, 12, 20 或输入 * 表示全天"
+              <input type="text" id="notificationHours" placeholder="例如：8 或 08, 12, 20；留空或 * = 每小時都可傳送"
                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-              <p class="mt-1 text-sm text-gray-500">可输入多个小时，使用逗号或空格分隔；留空则全天发送（仍受 Cron 每小时触发限制）</p>
-              <div id="tzWindowPreview" class="mt-2 text-sm font-medium"></div>
+              <p class="mt-1 text-sm text-gray-500">
+                填 0–23 的整點（可多個，逗號分隔）。系統每小時檢查一次：只有「當前整點」落在列表裡才會發提醒。
+                <strong>留空或填 *</strong> 表示每個整點都可以傳送。
+              </p>
+              <div id="tzWindowPreview" class="mt-2 p-3 rounded-md border border-gray-200 bg-gray-50 text-sm leading-relaxed"></div>
             </div>
             <div class="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm text-amber-800">
-              <p class="font-semibold mb-1"><i class="fas fa-info-circle"></i> 时区语义变更</p>
-              <p>本字段在 按 <b>你设置的时区</b> 解释。例如想让北京时间 08:00 收到提醒，<code>TIMEZONE=Asia/Shanghai</code> 时填 <code>08</code>。</p>
-              <p class="mt-1">若你之前是 老版本用户并按 UTC 填了小时数，请重新调整。Cron 仍每小时触发。</p>
->>>>>>> upstream/master
+              <p class="font-semibold mb-1"><i class="fas fa-info-circle"></i> 時區語意變更</p>
+              <p>此欄位已改為按 <b>您設定的時區</b> 解釋。例如想讓台北時間 08:00 收到提醒，<code>TIMEZONE=Asia/Taipei</code> 時填 <code>08</code>。</p>
+              <p class="mt-1">如果您之前是舊版本使用者並按 UTC 填寫了小時數，請重新調整。Cron 仍每小時觸發。</p>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-900">
+              <p class="font-semibold mb-1"><i class="fas fa-lightbulb mr-1"></i>怎麼理解？</p>
+              <ul class="list-disc pl-5 space-y-1">
+                <li>上面選的<strong>時區</strong>決定「現在幾點」——台灣使用者一般選 <b>Asia/Taipei（台北時間）</b>。</li>
+                <li>填 <code>08</code> = 只在<strong>台北時間早上 8 點那一小時</strong>傳送（約 8:00–8:59）。</li>
+                <li>現在若是 19 點，填了 08，則<strong>不會傳送</strong>，定時任務歷史會寫「不在允許傳送的小時」——這是正常的。</li>
+                <li>修改後請點選「儲存配置」才會生效；下方預覽會按輸入框內容即時判斷。</li>
+              </ul>     <div id="tzWindowPreview" class="mt-2 p-3 rounded-md border border-gray-200 bg-gray-50 text-sm leading-relaxed"></div>
             </div>
           </div>
           <div class="mb-6">
@@ -277,6 +266,10 @@
               <label class="inline-flex items-center">
                 <input type="checkbox" name="enabledNotifiers" value="serverchan" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
                 <span class="ml-2 text-sm text-gray-700">Server醬</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="enabledNotifiers" value="ntfy" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                <span class="ml-2 text-sm text-gray-700">ntfy</span>
               </label>
               <label class="inline-flex items-center">
                 <input type="checkbox" name="enabledNotifiers" value="pushplus" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
@@ -356,6 +349,11 @@
               <div>
                 <label for="tgChatId" class="block text-sm font-medium text-gray-700">Chat ID</label>
                 <input type="text" id="tgChatId" placeholder="可從 @userinfobot 獲取" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              </div>
+              <div>
+                <label for="tgTopicId" class="block text-sm font-medium text-gray-700">Topic ID（可选）</label>
+                <input type="text" id="tgTopicId" placeholder="Forum 群组话题 ID，对应 message_thread_id" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <p class="mt-1 text-xs text-gray-500">仅在开启 Topics 的群组中填写；留空则发送到普通会话/群组。</p>
               </div>
             </div>
             <div class="flex justify-end">
@@ -569,6 +567,36 @@
             </div>
           </div>
 
+          <div id="ntfyConfig" class="config-section">
+            <h4 class="text-md font-medium text-gray-900 mb-3">ntfy 設定</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label for="ntfyServer" class="block text-sm font-medium text-gray-700">Server URL</label>
+                <input type="url" id="ntfyServer" placeholder="https://ntfy.sh" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <p class="mt-1 text-sm text-gray-500">公用伺服器可用 https://ntfy.sh，也可填自建地址。</p>
+              </div>
+              <div>
+                <label for="ntfyTopic" class="block text-sm font-medium text-gray-700">Topic（主題）</label>
+                <input type="text" id="ntfyTopic" placeholder="例如 my-substracker-alerts" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              </div>
+              <div class="md:col-span-2">
+                <label for="ntfyToken" class="block text-sm font-medium text-gray-700">Access Token（選填）</label>
+                <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <input type="text" id="ntfyToken" placeholder="留空表示不修改；受保護主題時填寫" class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <button type="button" id="clearNtfyToken" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                    <i class="fas fa-eraser mr-2"></i>清空
+                  </button>
+                </div>
+                <p id="NTFY_TOKENStatus" class="mt-1 text-xs text-gray-500">載入中...</p>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="button" id="testNtfyBtn" class="btn-secondary text-white px-4 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-paper-plane mr-2"></i>測試 ntfy 通知
+              </button>
+            </div>
+          </div>
+
           <div id="serverchanConfig" class="config-section">
             <h4 class="text-md font-medium text-gray-900 mb-3">Server醬 設定</h4>
             <div class="grid grid-cols-1 gap-4 mb-4">
@@ -634,6 +662,53 @@
           </button>
         </div>
       </form>
+
+      <!-- 备份与恢复（不在 configForm 内，避免触发表单提交） -->
+      <div class="config-section active mt-8" id="backupSection">
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">
+          <i class="fas fa-file-export text-indigo-500 mr-2"></i>数据备份与恢复
+        </h3>
+        <p class="text-sm text-gray-500 mb-4">
+          导出系统配置、订阅列表与提醒规则，便于换账号部署或升级迁移。
+          默认导出<strong>不含</strong> Bot Token / API Key 等密钥；需要时可勾选「包含敏感配置」。
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 class="text-sm font-semibold text-gray-700 mb-3"><i class="fas fa-download mr-1"></i>导出备份</h4>
+            <label class="inline-flex items-center text-sm text-gray-700 mb-3 cursor-pointer">
+              <input type="checkbox" id="exportIncludeSecrets" class="form-checkbox h-4 w-4 text-indigo-600 rounded border-gray-300">
+              <span class="ml-2">包含敏感配置（Token / 密码等）</span>
+            </label>
+            <p class="text-xs text-amber-600 mb-3">勾选后请妥善保管 JSON 文件，勿上传公开仓库。</p>
+            <button type="button" id="exportBackupBtn" class="btn-secondary text-white px-4 py-2 rounded-md text-sm font-medium">
+              <i class="fas fa-file-download mr-2"></i>下载备份 JSON
+            </button>
+          </div>
+
+          <div class="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 class="text-sm font-semibold text-gray-700 mb-3"><i class="fas fa-upload mr-1"></i>导入恢复</h4>
+            <input type="file" id="importBackupFile" accept="application/json,.json" class="block w-full text-sm text-gray-600 mb-3">
+            <div class="flex flex-col gap-2 mb-3">
+              <label class="inline-flex items-center text-sm text-gray-700 cursor-pointer">
+                <input type="radio" name="importMode" value="merge" class="form-radio h-4 w-4 text-indigo-600" checked>
+                <span class="ml-2">合并（按 ID 覆盖同名订阅，保留其余）</span>
+              </label>
+              <label class="inline-flex items-center text-sm text-gray-700 cursor-pointer">
+                <input type="radio" name="importMode" value="replace" class="form-radio h-4 w-4 text-indigo-600">
+                <span class="ml-2">覆盖（删除现有订阅后整包导入）</span>
+              </label>
+              <label class="inline-flex items-center text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" id="importIncludeSecrets" class="form-checkbox h-4 w-4 text-indigo-600 rounded border-gray-300">
+                <span class="ml-2">应用备份中的敏感配置（仅当备份含密钥时有效）</span>
+              </label>
+            </div>
+            <button type="button" id="importBackupBtn" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium">
+              <i class="fas fa-file-import mr-2"></i>从文件恢复
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -745,10 +820,17 @@
         // 3) 如需清空，請點對應的“清空”按鈕（會在儲存時生效）。
 
         document.getElementById('adminUsername').value = config.ADMIN_USERNAME || '';
+        const _banner = document.getElementById('defaultPasswordBanner');
+        if (_banner) {
+          // 無法讀取密碼；使用者名稱仍為 admin 時提示修改密碼（預設部署風險）
+          _banner.classList.toggle('hidden', (config.ADMIN_USERNAME || 'admin') !== 'admin');
+        }
         document.getElementById('themeModeSelect').value = config.THEME_MODE || 'system';  // 回顯主題設定
 
         // 非敏感欄位正常回顯
         document.getElementById('tgChatId').value = config.TG_CHAT_ID || '';
+        const tgTopicEl = document.getElementById('tgTopicId');
+        if (tgTopicEl) tgTopicEl.value = config.TG_TOPIC_ID || '';
         document.getElementById('webhookMethod').value = config.WEBHOOK_METHOD || 'POST';
         document.getElementById('webhookTemplate').value = config.WEBHOOK_TEMPLATE || '';
         document.getElementById('wechatbotMsgType').value = config.WECHATBOT_MSG_TYPE || 'text';
@@ -760,6 +842,8 @@
         document.getElementById('barkServer').value = config.BARK_SERVER || 'https://api.day.app';
         document.getElementById('barkIsArchive').checked = config.BARK_IS_ARCHIVE === 'true';
         document.getElementById('gotifyServerUrl').value = config.GOTIFY_SERVER_URL || '';
+        if (document.getElementById('ntfyServer')) document.getElementById('ntfyServer').value = config.NTFY_SERVER || 'https://ntfy.sh';
+        if (document.getElementById('ntfyTopic')) document.getElementById('ntfyTopic').value = config.NTFY_TOPIC || '';
         document.getElementById('pushplusTopic').value = config.PUSHPLUS_TOPIC || '';
         document.getElementById('pushplusChannel').value = config.PUSHPLUS_CHANNEL || '';
 
@@ -786,6 +870,7 @@
           BARK_DEVICE_KEY: config.BARK_DEVICE_KEY_CONFIGURED === true,
           THIRD_PARTY_API_TOKEN: config.THIRD_PARTY_API_TOKEN_CONFIGURED === true,
           GOTIFY_APP_TOKEN: config.GOTIFY_APP_TOKEN_CONFIGURED === true,
+          NTFY_TOKEN: config.NTFY_TOKEN_CONFIGURED === true,
           SERVERCHAN_SENDKEY: config.SERVERCHAN_SENDKEY_CONFIGURED === true,
           PUSHPLUS_TOKEN: config.PUSHPLUS_TOKEN_CONFIGURED === true
         };
@@ -813,6 +898,11 @@
         });
 
         toggleNotificationConfigs(enabledNotifiers);
+
+        // 配置加载完成后再刷新「是否可发送」预览（避免空输入被当成全天）
+        if (typeof window.__refreshNotificationHoursPreview === 'function') {
+          window.__refreshNotificationHoursPreview();
+        }
       } catch (error) {
         console.error('載入配置失敗:', error);
         showToast('載入配置失敗，請重新整理頁面重試', 'error');
@@ -888,6 +978,7 @@
     
     function toggleNotificationConfigs(enabledNotifiers) {
       const telegramConfig = document.getElementById('telegramConfig');
+      const ntfyConfig = document.getElementById('ntfyConfig');
       const notifyxConfig = document.getElementById('notifyxConfig');
       const webhookConfig = document.getElementById('webhookConfig');
       const wechatbotConfig = document.getElementById('wechatbotConfig');
@@ -898,7 +989,7 @@
       const pushplusConfig = document.getElementById('pushplusConfig');
 
       // 重置所有配置區域
-      [telegramConfig, notifyxConfig, webhookConfig, wechatbotConfig, emailConfig, barkConfig, gotifyConfig, serverchanConfig, pushplusConfig].forEach(config => {
+      [telegramConfig, notifyxConfig, webhookConfig, wechatbotConfig, emailConfig, barkConfig, gotifyConfig, serverchanConfig, pushplusConfig, ntfyConfig].forEach(config => {
         config.classList.remove('active', 'inactive');
         config.classList.add('inactive');
       });
@@ -926,6 +1017,9 @@
         } else if (type === 'gotify') {
           gotifyConfig.classList.remove('inactive');
           gotifyConfig.classList.add('active');
+        } else if (type === 'ntfy' && ntfyConfig) {
+          ntfyConfig.classList.remove('inactive');
+          ntfyConfig.classList.add('active');
         } else if (type === 'serverchan') {
           serverchanConfig.classList.remove('inactive');
           serverchanConfig.classList.add('active');
@@ -974,6 +1068,7 @@
 
         // 非敏感欄位正常提交
         TG_CHAT_ID: document.getElementById('tgChatId').value.trim(),
+        TG_TOPIC_ID: (document.getElementById('tgTopicId') && document.getElementById('tgTopicId').value.trim()) || '',
         WEBHOOK_METHOD: document.getElementById('webhookMethod').value,
         WEBHOOK_TEMPLATE: document.getElementById('webhookTemplate').value.trim(),
         SHOW_LUNAR: document.getElementById('showLunarGlobal').checked,
@@ -988,6 +1083,9 @@
         GOTIFY_SERVER_URL: document.getElementById('gotifyServerUrl').value.trim(),
         PUSHPLUS_TOPIC: document.getElementById('pushplusTopic').value.trim(),
         PUSHPLUS_CHANNEL: document.getElementById('pushplusChannel').value.trim(),
+        NTFY_SERVER: (document.getElementById('ntfyServer') && document.getElementById('ntfyServer').value.trim()) || 'https://ntfy.sh',
+        NTFY_TOPIC: (document.getElementById('ntfyTopic') && document.getElementById('ntfyTopic').value.trim()) || '',
+        NTFY_TOKEN: (document.getElementById('ntfyToken') && document.getElementById('ntfyToken').value.trim()) || '',
         ENABLED_NOTIFIERS: enabledNotifiers,
         TIMEZONE: document.getElementById('timezone').value.trim(),
 
@@ -1070,7 +1168,8 @@
                       type === 'bark' ? 'testBarkBtn' :
                       type === 'gotify' ? 'testGotifyBtn' :
                       type === 'serverchan' ? 'testServerchanBtn' :
-                      type === 'pushplus' ? 'testPushplusBtn' : 'testWebhookBtn';
+                      type === 'pushplus' ? 'testPushplusBtn' :
+        type === 'ntfy' ? 'testNtfyBtn' : 'testWebhookBtn';
       const button = document.getElementById(buttonId);
       if (!button) {
         showToast('測試按鈕不存在，請重新整理頁面後重試', 'error');
@@ -1083,8 +1182,9 @@
                           type === 'email' ? '郵件通知' :
                           type === 'bark' ? 'Bark' :
                           type === 'gotify' ? 'Gotify' :
-                          type === 'serverchan' ? 'Server醬' :
-                          type === 'pushplus' ? 'PushPlus' : 'Webhook 通知';
+                           type === 'serverchan' ? 'Server醬' :
+                           type === 'pushplus' ? 'PushPlus' :
+                           type === 'ntfy' ? 'ntfy' : 'Webhook 通知';
 
       button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>測試中...';
       button.disabled = true;
@@ -1093,6 +1193,8 @@
       // 方案 B：敏感欄位不回顯。測試通知時如果使用者沒填，就按“使用伺服器已儲存的配置”處理。
       if (type === 'telegram') {
         config.TG_CHAT_ID = document.getElementById('tgChatId').value.trim();
+        const topicEl = document.getElementById('tgTopicId');
+        if (topicEl) config.TG_TOPIC_ID = topicEl.value.trim();
         const token = document.getElementById('tgBotToken').value.trim();
         if (token) config.TG_BOT_TOKEN = token;
       } else if (type === 'notifyx') {
@@ -1208,6 +1310,13 @@
       testNotification('pushplus');
     });
 
+    const testNtfyBtn = document.getElementById('testNtfyBtn');
+    if (testNtfyBtn) {
+      testNtfyBtn.addEventListener('click', () => {
+        testNotification('ntfy');
+      });
+    }
+
     document.getElementById('generateThirdPartyToken').addEventListener('click', () => {
       try {
         // 生成 32 位隨機令牌，避免出現特殊字元，方便寫入 URL
@@ -1236,6 +1345,7 @@
       wireSecretInput('barkDeviceKey', 'BARK_DEVICE_KEY');
       wireSecretInput('thirdPartyToken', 'THIRD_PARTY_API_TOKEN');
       wireSecretInput('gotifyAppToken', 'GOTIFY_APP_TOKEN');
+      if (document.getElementById('ntfyToken')) wireSecretInput('ntfyToken', 'NTFY_TOKEN');
       wireSecretInput('serverchanSendKey', 'SERVERCHAN_SENDKEY');
       wireSecretInput('pushplusToken', 'PUSHPLUS_TOKEN');
 
@@ -1248,6 +1358,7 @@
       wireClearSecretButton('clearBarkDeviceKey', 'barkDeviceKey', 'BARK_DEVICE_KEY');
       wireClearSecretButton('clearThirdPartyToken', 'thirdPartyToken', 'THIRD_PARTY_API_TOKEN');
       wireClearSecretButton('clearGotifyAppToken', 'gotifyAppToken', 'GOTIFY_APP_TOKEN');
+      if (document.getElementById('clearNtfyToken')) wireClearSecretButton('clearNtfyToken', 'ntfyToken', 'NTFY_TOKEN');
       wireClearSecretButton('clearServerchanSendKey', 'serverchanSendKey', 'SERVERCHAN_SENDKEY');
       wireClearSecretButton('clearPushplusToken', 'pushplusToken', 'PUSHPLUS_TOKEN');
 
@@ -1443,8 +1554,8 @@
     }
 
     // ───────────────────────────────────────────────────────
-    // 本次：通知时段实时预览（按用户配置的 TIMEZONE）
-    // 当用户改 TIMEZONE / 改 notificationHours 时，下方提示实时更新
+    // 通知小时实时预览（与调度器同一套规则）
+    // 注意：必须在 loadConfig 写入输入框之后再刷新，否则会误显示「空=全天」
     // ───────────────────────────────────────────────────────
     (function () {
       const tzSelect = document.getElementById('timezone');
@@ -1452,6 +1563,22 @@
       const labelInline = document.getElementById('tzLabelInline');
       const preview = document.getElementById('tzWindowPreview');
       if (!tzSelect || !hoursInput || !preview || !labelInline) return;
+
+      const TZ_LABELS = {
+        'Asia/Shanghai': '北京时间',
+        'Asia/Hong_Kong': '香港时间',
+        'Asia/Taipei': '台北时间',
+        'Asia/Tokyo': '东京时间',
+        'Asia/Singapore': '新加坡时间',
+        'UTC': '世界协调时(UTC)',
+        'America/New_York': '纽约时间',
+        'America/Los_Angeles': '洛杉矶时间',
+        'Europe/London': '伦敦时间'
+      };
+
+      function friendlyTz(tz) {
+        return TZ_LABELS[tz] || tz;
+      }
 
       function currentTzHour(tz) {
         try {
@@ -1462,7 +1589,7 @@
           let h = parts.find(p => p.type === 'hour')?.value || '00';
           const m = parts.find(p => p.type === 'minute')?.value || '00';
           if (h === '24') h = '00';
-          return { hh: String(h).padStart(2, '0'), mm: m };
+          return { hh: String(h).padStart(2, '0'), mm: String(m).padStart(2, '0') };
         } catch {
           return { hh: '??', mm: '??' };
         }
@@ -1480,28 +1607,143 @@
 
       function update() {
         const tz = tzSelect.value || 'UTC';
-        labelInline.textContent = '（按 ' + tz + '）';
+        const tzName = friendlyTz(tz);
+        labelInline.textContent = '（按' + tzName + '）';
         const { hh, mm } = currentTzHour(tz);
         const hours = parseHours(hoursInput.value);
-        const inWindow =
-          hours.length === 0 ||
-          hours.includes('*') ||
-          hours.includes(hh);
+        const allowAll = hours.length === 0 || hours.includes('*');
+        const inWindow = allowAll || hours.includes(hh);
+
+        let statusHtml;
+        if (allowAll) {
+          statusHtml = '<span class="text-green-700 font-medium">✓ 当前会允许发送</span>'
+            + '<div class="text-xs text-gray-600 mt-1">未限制小时（留空或 *）= 每个整点检查时都可以发。</div>';
+        } else if (inWindow) {
+          statusHtml = '<span class="text-green-700 font-medium">✓ 当前整点在允许列表内，会发送</span>'
+            + '<div class="text-xs text-gray-600 mt-1">允许的小时：<b>' + hours.join('、') + '</b>；现在是 <b>' + hh + ':' + mm + '</b>（' + tzName + '）。</div>';
+        } else {
+          statusHtml = '<span class="text-amber-700 font-medium">✗ 当前不会发送</span>'
+            + '<div class="text-xs text-gray-600 mt-1">你只允许在 <b>' + hours.join('、') + '</b> 点发送；现在是 <b>' + hh + ':' + mm + '</b>（' + tzName + '）。'
+            + '定时任务仍会每小时跑一次，但不推送，任务历史会记「不在允许发送的小时」——这是正常跳过。</div>';
+        }
+
         preview.innerHTML =
-          '当前 <b>' + tz + '</b> 时间约 <b>' + hh + ':' + mm + '</b>：'
-          + (inWindow
-              ? '<span class="text-green-600">✓ 在通知时段内</span>'
-              : '<span class="text-amber-600">✗ 不在通知时段内（下次触发将跳过发送）</span>')
-          + (hours.length === 0
-              ? '<span class="ml-2 text-gray-500 text-xs">（时段为空 = 全天可发送）</span>'
-              : '<span class="ml-2 text-gray-500 text-xs">（已配置：' + hours.join(', ') + '）</span>');
+          '<div class="text-gray-800">' + statusHtml + '</div>'
+          + '<div class="text-xs text-gray-500 mt-2">时区代码：' + tz + ' · 预览仅反映输入框内容，保存后调度器才用服务器上的值。</div>';
       }
+
+      window.__refreshNotificationHoursPreview = update;
 
       tzSelect.addEventListener('change', update);
       hoursInput.addEventListener('input', update);
-      // 启动时先 fire 一次，并每 30s 自动刷新（小时跨边界时也能更新）
+      hoursInput.addEventListener('change', update);
       setTimeout(update, 200);
       setInterval(update, 30000);
+    })();
+
+    // ───────────────────────────────────────────────────────
+    // 备份导出 / 导入恢复
+    // ───────────────────────────────────────────────────────
+    (function () {
+      const exportBtn = document.getElementById('exportBackupBtn');
+      const importBtn = document.getElementById('importBackupBtn');
+      if (!exportBtn || !importBtn) return;
+
+      exportBtn.addEventListener('click', async () => {
+        const includeSecrets = document.getElementById('exportIncludeSecrets').checked;
+        if (includeSecrets && !confirm('将导出包含 Token / 密钥的完整备份，请确认文件会安全保存。继续？')) {
+          return;
+        }
+        const original = exportBtn.innerHTML;
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>导出中...';
+        try {
+          const url = '/api/backup?includeSecrets=' + (includeSecrets ? '1' : '0');
+          const res = await apiFetch(url);
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || ('HTTP ' + res.status));
+          }
+          const blob = await res.blob();
+          const a = document.createElement('a');
+          const objectUrl = URL.createObjectURL(blob);
+          a.href = objectUrl;
+          a.download = 'substracker-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(objectUrl);
+          showToast('备份已下载', 'success');
+        } catch (e) {
+          if (e && e.message === 'AUTH_EXPIRED') return;
+          console.error(e);
+          showToast('导出失败: ' + (e.message || e), 'error');
+        } finally {
+          exportBtn.disabled = false;
+          exportBtn.innerHTML = original;
+        }
+      });
+
+      importBtn.addEventListener('click', async () => {
+        const fileInput = document.getElementById('importBackupFile');
+        const file = fileInput && fileInput.files && fileInput.files[0];
+        if (!file) {
+          showToast('请先选择备份 JSON 文件', 'warning');
+          return;
+        }
+        const modeEl = document.querySelector('input[name="importMode"]:checked');
+        const mode = modeEl ? modeEl.value : 'merge';
+        const includeSecrets = document.getElementById('importIncludeSecrets').checked;
+
+        if (mode === 'replace' && !confirm('覆盖模式会删除当前全部订阅后再导入，且不可撤销。确定继续？')) {
+          return;
+        }
+        if (!confirm('确认从备份恢复？建议先导出一份当前数据作为回滚。')) {
+          return;
+        }
+
+        const original = importBtn.innerHTML;
+        importBtn.disabled = true;
+        importBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>恢复中...';
+        try {
+          const text = await file.text();
+          let backup;
+          try {
+            backup = JSON.parse(text);
+          } catch {
+            throw new Error('文件不是合法 JSON');
+          }
+          const res = await apiFetch('/api/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ backup, mode, includeSecrets })
+          });
+          const result = await res.json().catch(() => ({}));
+          if (!res.ok || !result.success) {
+            throw new Error(result.message || ('HTTP ' + res.status));
+          }
+          const stats = result.stats || {};
+          showToast(
+            '恢复成功：订阅 ' + (stats.subscriptions || 0) +
+            ' 条，规则 ' + (stats.reminderRules || 0) + ' 条',
+            'success',
+            5000
+          );
+          // 重新加载配置表单
+          if (typeof loadConfig === 'function') {
+            try { loadConfig(); } catch (_) { /* ignore */ }
+          } else {
+            setTimeout(function () { location.reload(); }, 800);
+          }
+        } catch (e) {
+          if (e && e.message === 'AUTH_EXPIRED') return;
+          console.error(e);
+          showToast('恢复失败: ' + (e.message || e), 'error', 6000);
+        } finally {
+          importBtn.disabled = false;
+          importBtn.innerHTML = original;
+        }
+      });
     })();
   </script>
 </body>
