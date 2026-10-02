@@ -61,6 +61,15 @@ function shouldTriggerReminder(reminder, daysDiff, hoursDiff) {
   return daysDiff >= 0 && daysDiff <= reminder.value;
 }
 
+function formatMatchedReminderRule(rule) {
+  if (rule.type === 'on_expiry') return '到期当天';
+  if (rule.type === 'after_expiry') {
+    return `到期后每 ${rule.repeatInterval || 24} 小时`;
+  }
+  if (rule.value === 0) return rule.unit === 'hours' ? '到期当小时' : '到期当天';
+  return `提前 ${rule.value} ${rule.unit === 'hours' ? '小时' : '天'}`;
+}
+
 function formatNotificationContent(subscriptions, config) {
   const showLunar = config.SHOW_LUNAR === true;
   const timezone = config?.TIMEZONE || 'UTC';
@@ -70,7 +79,7 @@ function formatNotificationContent(subscriptions, config) {
     const typeText = sub.customType || '其他';
     const periodText = (sub.periodValue && sub.periodUnit) ? `(週期: ${sub.periodValue} ${ { day: '天', month: '月', year: '年' }[sub.periodUnit] || sub.periodUnit})` : '';
     const categoryText = sub.category ? sub.category : '未分類';
-    const reminderSetting = resolveReminderSetting(sub);
+    const reminderSetting = sub.matchedReminderRule ? null : resolveReminderSetting(sub);
 
     const expiryDateObj = new Date(sub.expiryDate);
     const formattedExpiryDate = formatTimeInTimezone(expiryDateObj, timezone, 'date');
@@ -93,12 +102,12 @@ function formatNotificationContent(subscriptions, config) {
       statusText = `將在 ${sub.daysRemaining} 天後到期`;
     }
 
-    const reminderSuffix = reminderSetting.value === 0
+    const reminderSuffix = reminderSetting?.value === 0
       ? '（僅到期時提醒）'
-      : (reminderSetting.unit === 'hour' ? '（小時級提醒）' : '');
-    const reminderText = reminderSetting.unit === 'hour'
-      ? `提醒策略: 提前 ${reminderSetting.value} 小時${reminderSuffix}`
-      : `提醒策略: 提前 ${reminderSetting.value} 天${reminderSuffix}`;
+      : (reminderSetting?.unit === 'hour' ? '（小時級提醒）' : '');
+    const reminderText = sub.matchedReminderRule
+      ? `提醒策略: ${formatMatchedReminderRule(sub.matchedReminderRule)}`
+      : `提醒策略: 提前 ${reminderSetting.value} ${reminderSetting.unit === 'hour' ? '小時' : '天'}${reminderSuffix}`;
 
     const calendarType = sub.useLunar ? '農曆' : '公曆';
     const autoRenewText = sub.autoRenew ? '是' : '否';

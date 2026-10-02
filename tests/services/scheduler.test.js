@@ -141,7 +141,9 @@ describe('调度器 - 时区 + 通知时段', () => {
       name: 'Multi',
       isActive: true,
       autoRenew: false,
-      expiryDate: '2026-05-27T03:00:00.000Z'
+      expiryDate: '2026-05-27T03:00:00.000Z',
+      reminderUnit: 'day',
+      reminderValue: 7
     });
     await remindersRepo.replaceForSubscription(env, 's-multi', [
       remindersRepo.normalizeRule({ type: 'before_expiry', value: 7, unit: 'days' }),
@@ -150,12 +152,15 @@ describe('调度器 - 时区 + 通知时段', () => {
       remindersRepo.normalizeRule({ type: 'on_expiry', value: 0, unit: 'days' })
     ]);
 
-    mockTelegramOk();
+    const fetchSpy = mockTelegramOk();
     const log = await checkExpiringSubscriptions(env);
     expect(log.matchedCount).toBe(1); // 只命中 value=3
     expect(log.sentCount).toBe(1);
     expect(log.extra.candidates).toHaveLength(1);
     expect(log.extra.candidates[0].ruleValue).toBe(3);
+    const sentBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
+    expect(sentBody.text).toContain('提醒策略: 提前 3 天');
+    expect(sentBody.text).not.toContain('提醒策略: 提前 7 天');
   });
 
   it('场景4：同规则同小时第二次调用 → 去重跳过', async () => {

@@ -1899,6 +1899,11 @@ const lunarBiz = {
       statusSelect.addEventListener('change', () => renderSubscriptionTable());
     }
 
+    const listShowLunar = document.getElementById('listShowLunar');
+    if (listShowLunar) {
+      listShowLunar.addEventListener('change', handleListLunarToggle);
+    }
+
     // 獲取所有訂閱並按到期時間排序
     async function loadSubscriptions(showLoading = true) {
       try {
@@ -3507,6 +3512,7 @@ const lunarBiz = {
     async function editSubscription(e) {
       const button = e.target.closest('button');
       const id = button ? button.dataset.id : (e.target.dataset.id || e.target.parentElement.dataset.id);
+      const originalButtonContent = button?.innerHTML;
       if (button) { button.disabled = true; button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
       
       try {
@@ -3583,7 +3589,7 @@ const lunarBiz = {
         showToast('获取訂閱資訊失敗', 'error');
         isEditingLoading = false;
       } finally {
-        if (button) { button.disabled = false; button.innerHTML = '<i class="fas fa-edit"></i>'; }
+        if (button) { button.disabled = false; button.innerHTML = originalButtonContent; }
       }
     }
     
@@ -3847,11 +3853,13 @@ const lunarBiz = {
         `;
         // 繫結事件
         wrap.querySelector('.rule-type').addEventListener('change', () => {
+          collect();
           rule.type = wrap.querySelector('.rule-type').value;
           if (rule.type === 'after_expiry' && rule.repeatInterval == null) rule.repeatInterval = 24;
           render();
         });
         wrap.querySelector('.rule-delete').addEventListener('click', () => {
+          collect();
           rules = rules.filter(r => r.id !== rule.id);
           render();
         });
@@ -3932,6 +3940,7 @@ const lunarBiz = {
         const addBtn = document.getElementById('reminderRulesAddBtn');
         const presetBtn = document.getElementById('reminderRulesPresetBtn');
         if (addBtn) addBtn.addEventListener('click', () => {
+          collect();
           rules.push({
             id: uuid(),
             type: 'before_expiry',

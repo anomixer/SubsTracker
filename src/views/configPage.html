@@ -214,6 +214,7 @@
               <p class="mt-1 text-sm text-gray-500">
                 填 0–23 的整點（可多個，逗號分隔）。系統每小時檢查一次：只有「當前整點」落在列表裡才會發提醒。
                 <strong>留空或填 *</strong> 表示每個整點都可以傳送。
+                多個小時只是允許傳送的時間窗口；同一訂閱的同一日級規則當天成功傳送後不會再次傳送。
               </p>
               <div id="tzWindowPreview" class="mt-2 p-3 rounded-md border border-gray-200 bg-gray-50 text-sm leading-relaxed"></div>
             </div>
@@ -275,6 +276,10 @@
                 <input type="checkbox" name="enabledNotifiers" value="pushplus" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
                 <span class="ml-2 text-sm text-gray-700">PushPlus</span>
               </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="enabledNotifiers" value="wpush" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                <span class="ml-2 text-sm text-gray-700">WPUSH</span>
+              </label>
             </div>
             <div class="mt-2 flex flex-wrap gap-4">
               <a href="https://www.notifyx.cn/" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">
@@ -297,6 +302,9 @@
               </a>
               <a href="https://www.pushplus.plus/" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">
                 <i class="fas fa-external-link-alt ml-1"></i> PushPlus官網
+              </a>
+              <a href="https://wpush.cn/" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">
+                <i class="fas fa-external-link-alt ml-1"></i> WPUSH官网
               </a>
             </div>
           </div>
@@ -654,6 +662,49 @@
               </button>
             </div>
           </div>
+
+          <div id="wpushConfig" class="config-section">
+            <h4 class="text-md font-medium text-gray-900 mb-3">WPUSH 配置</h4>
+            <div class="grid grid-cols-1 gap-4 mb-4">
+              <div>
+                <label for="wpushApikey" class="block text-sm font-medium text-gray-700">API Key</label>
+                <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <input type="text" id="wpushApikey" placeholder="留空表示不修改；输入新值将更新" class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <button type="button" id="clearWpushApikey" class="btn-warning text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">
+                    <i class="fas fa-eraser mr-2"></i>清空
+                  </button>
+                </div>
+                <p id="WPUSH_APIKEYStatus" class="mt-1 text-xs text-gray-500">加载中...</p>
+                <p class="mt-1 text-sm text-gray-500">从 <a href="https://wpush.cn/settings" target="_blank" class="text-indigo-600 hover:text-indigo-800">WPUSH 设置页</a> 获取 API Key</p>
+              </div>
+              <div>
+                <label for="wpushChannel" class="block text-sm font-medium text-gray-700">渠道（可选）</label>
+                <select id="wpushChannel" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <option value="">默认</option>
+                  <option value="wechat">微信公众号</option>
+                  <option value="app">App</option>
+                  <option value="sms">短信</option>
+                  <option value="mail">邮件</option>
+                  <option value="webhook">Webhook</option>
+                  <option value="dingtalk">钉钉</option>
+                  <option value="feishu">飞书</option>
+                  <option value="wechat_work">企业微信</option>
+                  <option value="clawbot">微信 ClawBot</option>
+                  <option value="qqbot">QQ 机器人</option>
+                </select>
+                <p class="mt-1 text-sm text-gray-500">具体可用渠道以 <a href="https://wpush.cn/docs" target="_blank" class="text-indigo-600 hover:text-indigo-800">WPUSH 文档</a> 为准</p>
+              </div>
+              <div>
+                <label for="wpushTopicCode" class="block text-sm font-medium text-gray-700">Topic 编码（可选）</label>
+                <input type="text" id="wpushTopicCode" placeholder="留空则按个人渠道推送" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="button" id="testWpushBtn" class="btn-secondary text-white px-4 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-paper-plane mr-2"></i>测试 WPUSH 通知
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="flex justify-end">
@@ -778,6 +829,7 @@
       setSecretStatus('GOTIFY_APP_TOKEN', cfg.GOTIFY_APP_TOKEN ? '已配置（已隱藏）' : '未配置');
       setSecretStatus('SERVERCHAN_SENDKEY', cfg.SERVERCHAN_SENDKEY ? '已配置（已隱藏）' : '未配置');
       setSecretStatus('PUSHPLUS_TOKEN', cfg.PUSHPLUS_TOKEN ? '已配置（已隱藏）' : '未配置');
+      setSecretStatus('WPUSH_APIKEY', cfg.WPUSH_APIKEY ? '已配置（已隱藏）' : '未配置');
     }
 
     function wireSecretInput(inputId, key) {
@@ -846,6 +898,8 @@
         if (document.getElementById('ntfyTopic')) document.getElementById('ntfyTopic').value = config.NTFY_TOPIC || '';
         document.getElementById('pushplusTopic').value = config.PUSHPLUS_TOPIC || '';
         document.getElementById('pushplusChannel').value = config.PUSHPLUS_CHANNEL || '';
+        if (document.getElementById('wpushChannel')) document.getElementById('wpushChannel').value = config.WPUSH_CHANNEL || '';
+        if (document.getElementById('wpushTopicCode')) document.getElementById('wpushTopicCode').value = config.WPUSH_TOPIC_CODE || '';
 
         // 敏感欄位：清空輸入框（不回顯真實值）
         document.getElementById('tgBotToken').value = '';
@@ -859,6 +913,7 @@
         document.getElementById('gotifyAppToken').value = '';
         document.getElementById('serverchanSendKey').value = '';
         document.getElementById('pushplusToken').value = '';
+        if (document.getElementById('wpushApikey')) document.getElementById('wpushApikey').value = '';
 
         window.SECRET_CONFIGURED = {
           TG_BOT_TOKEN: config.TG_BOT_TOKEN_CONFIGURED === true,
@@ -872,7 +927,8 @@
           GOTIFY_APP_TOKEN: config.GOTIFY_APP_TOKEN_CONFIGURED === true,
           NTFY_TOKEN: config.NTFY_TOKEN_CONFIGURED === true,
           SERVERCHAN_SENDKEY: config.SERVERCHAN_SENDKEY_CONFIGURED === true,
-          PUSHPLUS_TOKEN: config.PUSHPLUS_TOKEN_CONFIGURED === true
+          PUSHPLUS_TOKEN: config.PUSHPLUS_TOKEN_CONFIGURED === true,
+          WPUSH_APIKEY: config.WPUSH_APIKEY_CONFIGURED === true
         };
 
         updateAllSecretStatus();
@@ -987,9 +1043,10 @@
       const gotifyConfig = document.getElementById('gotifyConfig');
       const serverchanConfig = document.getElementById('serverchanConfig');
       const pushplusConfig = document.getElementById('pushplusConfig');
+      const wpushConfig = document.getElementById('wpushConfig');
 
       // 重置所有配置區域
-      [telegramConfig, notifyxConfig, webhookConfig, wechatbotConfig, emailConfig, barkConfig, gotifyConfig, serverchanConfig, pushplusConfig, ntfyConfig].forEach(config => {
+      [telegramConfig, notifyxConfig, webhookConfig, wechatbotConfig, emailConfig, barkConfig, gotifyConfig, serverchanConfig, pushplusConfig, ntfyConfig, wpushConfig].forEach(config => {
         config.classList.remove('active', 'inactive');
         config.classList.add('inactive');
       });
@@ -1026,6 +1083,9 @@
         } else if (type === 'pushplus') {
           pushplusConfig.classList.remove('inactive');
           pushplusConfig.classList.add('active');
+        } else if (type === 'wpush' && wpushConfig) {
+          wpushConfig.classList.remove('inactive');
+          wpushConfig.classList.add('active');
         }
       });
     }
@@ -1065,6 +1125,7 @@
         GOTIFY_APP_TOKEN: document.getElementById('gotifyAppToken').value.trim(),
         SERVERCHAN_SENDKEY: document.getElementById('serverchanSendKey').value.trim(),
         PUSHPLUS_TOKEN: document.getElementById('pushplusToken').value.trim(),
+        WPUSH_APIKEY: (document.getElementById('wpushApikey') && document.getElementById('wpushApikey').value.trim()) || '',
 
         // 非敏感欄位正常提交
         TG_CHAT_ID: document.getElementById('tgChatId').value.trim(),
@@ -1086,6 +1147,8 @@
         NTFY_SERVER: (document.getElementById('ntfyServer') && document.getElementById('ntfyServer').value.trim()) || 'https://ntfy.sh',
         NTFY_TOPIC: (document.getElementById('ntfyTopic') && document.getElementById('ntfyTopic').value.trim()) || '',
         NTFY_TOKEN: (document.getElementById('ntfyToken') && document.getElementById('ntfyToken').value.trim()) || '',
+        WPUSH_CHANNEL: (document.getElementById('wpushChannel') && document.getElementById('wpushChannel').value.trim()) || '',
+        WPUSH_TOPIC_CODE: (document.getElementById('wpushTopicCode') && document.getElementById('wpushTopicCode').value.trim()) || '',
         ENABLED_NOTIFIERS: enabledNotifiers,
         TIMEZONE: document.getElementById('timezone').value.trim(),
 
@@ -1169,7 +1232,8 @@
                       type === 'gotify' ? 'testGotifyBtn' :
                       type === 'serverchan' ? 'testServerchanBtn' :
                       type === 'pushplus' ? 'testPushplusBtn' :
-        type === 'ntfy' ? 'testNtfyBtn' : 'testWebhookBtn';
+                      type === 'ntfy' ? 'testNtfyBtn' :
+                      type === 'wpush' ? 'testWpushBtn' : 'testWebhookBtn';
       const button = document.getElementById(buttonId);
       if (!button) {
         showToast('測試按鈕不存在，請重新整理頁面後重試', 'error');
@@ -1184,7 +1248,8 @@
                           type === 'gotify' ? 'Gotify' :
                            type === 'serverchan' ? 'Server醬' :
                            type === 'pushplus' ? 'PushPlus' :
-                           type === 'ntfy' ? 'ntfy' : 'Webhook 通知';
+                           type === 'ntfy' ? 'ntfy' :
+                           type === 'wpush' ? 'WPUSH' : 'Webhook 通知';
 
       button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>測試中...';
       button.disabled = true;
@@ -1243,6 +1308,11 @@
         if (token) config.PUSHPLUS_TOKEN = token;
         config.PUSHPLUS_TOPIC = document.getElementById('pushplusTopic').value.trim();
         config.PUSHPLUS_CHANNEL = document.getElementById('pushplusChannel').value.trim();
+      } else if (type === 'wpush') {
+        const key = document.getElementById('wpushApikey') && document.getElementById('wpushApikey').value.trim();
+        if (key) config.WPUSH_APIKEY = key;
+        config.WPUSH_CHANNEL = (document.getElementById('wpushChannel') && document.getElementById('wpushChannel').value.trim()) || '';
+        config.WPUSH_TOPIC_CODE = (document.getElementById('wpushTopicCode') && document.getElementById('wpushTopicCode').value.trim()) || '';
       }
 
       try {
@@ -1317,6 +1387,13 @@
       });
     }
 
+    const testWpushBtn = document.getElementById('testWpushBtn');
+    if (testWpushBtn) {
+      testWpushBtn.addEventListener('click', () => {
+        testNotification('wpush');
+      });
+    }
+
     document.getElementById('generateThirdPartyToken').addEventListener('click', () => {
       try {
         // 生成 32 位隨機令牌，避免出現特殊字元，方便寫入 URL
@@ -1348,6 +1425,7 @@
       if (document.getElementById('ntfyToken')) wireSecretInput('ntfyToken', 'NTFY_TOKEN');
       wireSecretInput('serverchanSendKey', 'SERVERCHAN_SENDKEY');
       wireSecretInput('pushplusToken', 'PUSHPLUS_TOKEN');
+      if (document.getElementById('wpushApikey')) wireSecretInput('wpushApikey', 'WPUSH_APIKEY');
 
       wireClearSecretButton('clearTgBotToken', 'tgBotToken', 'TG_BOT_TOKEN');
       wireClearSecretButton('clearNotifyxApiKey', 'notifyxApiKey', 'NOTIFYX_API_KEY');
@@ -1361,6 +1439,7 @@
       if (document.getElementById('clearNtfyToken')) wireClearSecretButton('clearNtfyToken', 'ntfyToken', 'NTFY_TOKEN');
       wireClearSecretButton('clearServerchanSendKey', 'serverchanSendKey', 'SERVERCHAN_SENDKEY');
       wireClearSecretButton('clearPushplusToken', 'pushplusToken', 'PUSHPLUS_TOKEN');
+      if (document.getElementById('clearWpushApikey')) wireClearSecretButton('clearWpushApikey', 'wpushApikey', 'WPUSH_APIKEY');
 
       loadConfig();
 

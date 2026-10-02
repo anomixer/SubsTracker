@@ -2,7 +2,7 @@
 /**
  * 配置读写与敏感字段脱敏
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // @ts-ignore
 import { env } from 'cloudflare:test';
 import app from '../../src/app.js';
@@ -22,6 +22,9 @@ async function loginCookie() {
       JWT_SECRET: 'secret-jwt',
       TG_BOT_TOKEN: 'bot-secret',
       TG_CHAT_ID: '111',
+      WPUSH_APIKEY: 'wpush-secret',
+      WPUSH_CHANNEL: 'feishu',
+      WPUSH_TOPIC_CODE: 'topic-1',
       TIMEZONE: 'Asia/Shanghai'
     })
   );
@@ -38,6 +41,7 @@ async function loginCookie() {
 }
 
 beforeEach(clearKv);
+afterEach(() => vi.restoreAllMocks());
 
 describe('GET /api/config', () => {
   it('未登录 401', async () => {
@@ -55,6 +59,8 @@ describe('GET /api/config', () => {
     expect(cfg.JWT_SECRET).toBeUndefined();
     expect(cfg.ADMIN_PASSWORD).toBeUndefined();
     expect(cfg.TG_CHAT_ID).toBe('111');
+    expect(cfg.WPUSH_APIKEY).toBe('');
+    expect(cfg.WPUSH_APIKEY_CONFIGURED).toBe(true);
   });
 });
 
@@ -98,5 +104,25 @@ describe('POST /api/config', () => {
     );
     const stored = await getConfig(env);
     expect(stored.TG_BOT_TOKEN).toBe('');
+  });
+});
+
+describe('POST /api/test-notification (WPUSH)', () => {
+  it('未保存的空渠道和 Topic 覆盖已保存值', async () => {
+    const cookie = await loginCookie();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ code: 0 }), { status: 200 })
+    );
+    const response = await app.request('/api/test-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      body: JSON.stringify({ type: 'wpush', WPUSH_CHANNEL: '', WPUSH_TOPIC_CODE: '' })
+    }, env);
+    expect(response.status).toBe(200);
+    expect((await response.json()).success).toBe(true);
+    const sentBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
+    expect(sentBody.apikey).toBe('wpush-secret');
+    expect(sentBody).not.toHaveProperty('channel');
+    expect(sentBody).not.toHaveProperty('topic_code');
   });
 });

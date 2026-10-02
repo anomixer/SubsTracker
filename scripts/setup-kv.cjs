@@ -17,9 +17,11 @@ function run(command) {
 }
 
 function listNamespaces() {
-  const output = run('npx wrangler kv namespace list');
+  const output = run('npx wrangler kv namespace list')
+    .replace(/^\s*Proxy environment variables detected\.[^\r\n]*\r?\n/, '');
   const parsed = JSON.parse(output);
-  return Array.isArray(parsed) ? parsed : [];
+  if (!Array.isArray(parsed)) throw new Error('Wrangler 返回的 namespace 列表不是数组');
+  return parsed;
 }
 
 function readWorkerName() {
